@@ -1,0 +1,28 @@
+# Django
+django-cors-headers
+django-filter
+djangorestframework-simplejwt
+
+# Database
+# psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# API Documentation
+drf-spectacular==0.26.5
+
+# Testing
+pytest==7.4.3
+pytest-django==4.7.0
+factory-boy==3.3.0
+
+# Production
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Development
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
