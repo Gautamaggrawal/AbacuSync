@@ -10,6 +10,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login
+from django.utils.crypto import get_random_string
+
 
 from .serializers import (
     CentreSerializer, StudentSerializer, StudentLevelHistorySerializer,
@@ -144,7 +146,7 @@ class CentreViewSet(viewsets.ModelViewSet):
     def reset_password(self, request, pk=None):
         """Reset password for centre user"""
         centre = self.get_object()
-        new_password = User.objects.make_random_password()
+        new_password = get_random_string(length=12)
         
         try:
             validate_password(new_password, centre.user)
@@ -237,7 +239,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     def reset_password(self, request, pk=None):
         """Reset password for student"""
         student = self.get_object()
-        new_password = User.objects.make_random_password()
+        new_password = get_random_string(length=12)
         
         try:
             validate_password(new_password, student.user)
