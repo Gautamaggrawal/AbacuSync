@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +28,7 @@ SECRET_KEY = 'django-insecure-1r-r@^cawjg%qm*f)pldmoi^y*y7k0#@+#9@g@%h9*-2wj+ue1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['abacusync.onrender.com']
 AUTH_USER_MODEL = "users.User"
 
 # Application definition
@@ -92,11 +93,20 @@ WSGI_APPLICATION = 'AbacuSync.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+# Initialize environ
+env = environ.Env()
+environ.Env.read_env()  # Reads the .env file
+
+
+# Use the environment variables to configure the database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db('DATABASE_URL', default='postgres://user:password@localhost:5432/dbname')
 }
 
 
