@@ -71,7 +71,7 @@ class CentreSerializer(serializers.ModelSerializer):
         model = Centre
         fields = [
             'uuid', 'user', 'centre_name',
-            'area', 'is_active', 'cis'
+            'area', 'is_active', 'cis','student_count'
         ]
         read_only_fields = ['uuid']
     
