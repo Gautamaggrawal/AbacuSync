@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-1r-r@^cawjg%qm*f)pldmoi^y*y7k0#@+#9@g@%h9*-2wj+ue1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['abacusync.onrender.com']
+ALLOWED_HOSTS = ['abacusync.onrender.com','localhost']
 AUTH_USER_MODEL = "users.User"
 
 # Application definition
@@ -68,6 +68,43 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Additional CORS settings for development
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",  # React default port
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^https://\w+\.onrender\.com$",  # Allow all render.com subdomains
+    ]
 
 ROOT_URLCONF = 'AbacuSync.urls'
 
