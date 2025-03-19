@@ -105,7 +105,7 @@ class StudentLevelHistory(UUIDModel):
         help_text=_("User who changed the level"),
     )
     start_date = models.DateField(_("start date"))
-    completion_date = models.DateField(_("completion date"), null=True, blank=True)
+    completion_date = models.DateField(_("completion date"), auto_now_add=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
 
     class Meta:

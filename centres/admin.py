@@ -5,12 +5,12 @@ from .models import Centre, CI
 @admin.register(Centre)
 class CentreAdmin(admin.ModelAdmin):
     list_display = (
-        'centre_name', 'franchisee_name', 'area',
+        'centre_name', 'area',
         'get_phone_number', 'get_email', 'is_active'
     )
     list_filter = ('is_active', 'area')
     search_fields = (
-        'centre_name', 'franchisee_name', 'area',
+        'centre_name', 'area',
         'user__phone_number', 'user__email'
     )
     raw_id_fields = ('user',)

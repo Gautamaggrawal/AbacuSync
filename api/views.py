@@ -129,7 +129,7 @@ class CentreViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdmin]
     filter_backends = [filters.SearchFilter]
     search_fields = [
-        'centre_name', 'franchisee_name', 'area',
+        'centre_name', 'area',
         'user__phone_number', 'user__email'
     ]
 

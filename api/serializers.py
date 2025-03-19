@@ -50,7 +50,7 @@ class LoginSerializer(serializers.Serializer):
 class CISerializer(serializers.ModelSerializer):
     class Meta:
         model = CI
-        fields = ['uuid', 'name', 'centre']
+        fields = ['uuid', 'name',]
 
 
 class CentreUserSerializer(serializers.ModelSerializer):
@@ -65,14 +65,18 @@ class CentreUserSerializer(serializers.ModelSerializer):
 class CentreSerializer(serializers.ModelSerializer):
     user = CentreUserSerializer()
     cis = CISerializer(many=True, required=False)
+    student_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Centre
         fields = [
-            'uuid', 'user', 'centre_name', 'franchisee_name',
+            'uuid', 'user', 'centre_name',
             'area', 'is_active', 'cis'
         ]
         read_only_fields = ['uuid']
+    
+    def get_student_count(self, obj):
+        return obj.students.count()
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -115,7 +119,7 @@ class CentreSerializer(serializers.ModelSerializer):
         if cis_data:
             instance.cis.all().delete()  # Remove existing CIs
             for ci_data in cis_data:
-                CI.objects.create(centre=instance, **ci_data)
+                CI.objects.get_or_create(centre=instance, **ci_data)
         
         return instance
 
@@ -131,7 +135,6 @@ class StudentUserSerializer(serializers.ModelSerializer):
 
 class StudentSerializer(serializers.ModelSerializer):
     user = StudentUserSerializer()
-    ci_name = serializers.CharField(source='ci.name', read_only=True)
     level_name = serializers.CharField(
         source='current_level.name',
         read_only=True
@@ -142,8 +145,8 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'uuid', 'user', 'name', 'dob', 'gender', 'current_level',
-            'ci', 'level_start_date', 'level_completion_date',
-            'is_active', 'ci_name', 'level_name', 'tests_taken'
+            'level_start_date', 'level_completion_date',
+            'is_active', 'level_name', 'tests_taken'
         ]
         read_only_fields = ['uuid']
 

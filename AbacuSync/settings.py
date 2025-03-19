@@ -80,31 +80,31 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
+# CORS_ALLOW_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]
 
 # Additional CORS settings for development
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOW_CREDENTIALS = True
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",  # React default port
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ]
-    CORS_ALLOWED_ORIGIN_REGEXES = [
-        r"^https://\w+\.onrender\.com$",  # Allow all render.com subdomains
-    ]
+# if DEBUG:
+#     CORS_ALLOW_ALL_ORIGINS = True
+#     CORS_ALLOW_CREDENTIALS = True
+#     CORS_ALLOWED_ORIGINS = [
+#         "http://localhost:3000",  # React default port
+#         "http://127.0.0.1:3000",
+#         "http://localhost:8000",
+#         "http://127.0.0.1:8000",
+#     ]
+#     CORS_ALLOWED_ORIGIN_REGEXES = [
+#         r"^https://\w+\.onrender\.com$",  # Allow all render.com subdomains
+#     ]
 
 ROOT_URLCONF = 'AbacuSync.urls'
 
