@@ -1,7 +1,8 @@
-from django.db import models
+from uuid import uuid4
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
 from django.utils.translation import gettext_lazy as _
-from uuid import UUID, uuid4
 
 
 class CustomUserManager(BaseUserManager):
@@ -32,23 +33,18 @@ class User(AbstractUser):
         ("CENTRE", "Centre"),
         ("STUDENT", "Student"),
     )
-    uuid = models.UUIDField(
-        default=uuid4, unique=True, editable=False, verbose_name=_("UUID")
-    )
+    uuid = models.UUIDField(default=uuid4, unique=True, editable=False, verbose_name=_("UUID"))
 
     username = None
     phone_number = models.CharField(_("phone number"), max_length=15, unique=True)
     email = models.EmailField(_("email address"), unique=True)
-    user_type = models.CharField(
-        _("user type"), max_length=10, choices=USER_TYPE_CHOICES
-    )
+    user_type = models.CharField(_("user type"), max_length=10, choices=USER_TYPE_CHOICES)
     is_superuser = models.BooleanField(
         _("superuser status"),
         default=False,
         db_index=True,
         help_text=_(
-            "Designates that this user has all permissions without "
-            "explicitly assigning them."
+            "Designates that this user has all permissions without " "explicitly assigning them."
         ),
     )
     is_staff = models.BooleanField(
@@ -100,9 +96,7 @@ class UUIDManager(models.Manager):
 class UUIDModel(models.Model):
     """Base model class that has a `uuid` natural key field."""
 
-    uuid = models.UUIDField(
-        default=uuid4, unique=True, editable=False, verbose_name=_("UUID")
-    )
+    uuid = models.UUIDField(default=uuid4, unique=True, editable=False, verbose_name=_("UUID"))
 
     objects = UUIDManager()
 

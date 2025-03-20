@@ -1,10 +1,11 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-import uuid
-from users.models import UUIDModel
 
-from students.models import Student, Level
+from students.models import Level, Student
+from users.models import UUIDModel
 
 
 class Test(UUIDModel):
@@ -109,14 +110,10 @@ class StudentTest(UUIDModel):
         related_name="student_tests",
         help_text=_("Test being taken"),
     )
-    status = models.CharField(
-        _("status"), max_length=20, choices=STATUS_CHOICES, default="PENDING"
-    )
+    status = models.CharField(_("status"), max_length=20, choices=STATUS_CHOICES, default="PENDING")
     start_time = models.DateTimeField(_("start time"), null=True, blank=True)
     end_time = models.DateTimeField(_("end time"), null=True, blank=True)
-    score = models.DecimalField(
-        _("score"), max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    score = models.DecimalField(_("score"), max_digits=5, decimal_places=2, null=True, blank=True)
     current_section = models.ForeignKey(
         TestSection,
         on_delete=models.SET_NULL,

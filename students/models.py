@@ -1,8 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from users.models import User
-from centres.models import Centre, CI
-from users.models import UUIDModel
+
+from centres.models import CI, Centre
+from users.models import User, UUIDModel
 
 
 class Level(UUIDModel):
@@ -56,9 +56,7 @@ class Student(UUIDModel):
         help_text=_("CI assigned to this student"),
     )
     level_start_date = models.DateField(_("level start date"))
-    level_completion_date = models.DateField(
-        _("level completion date"), null=True, blank=True
-    )
+    level_completion_date = models.DateField(_("level completion date"), null=True, blank=True)
     is_active = models.BooleanField(_("active"), default=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
