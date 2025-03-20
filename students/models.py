@@ -54,6 +54,7 @@ class Student(UUIDModel):
         on_delete=models.CASCADE,
         related_name="students",
         help_text=_("CI assigned to this student"),
+        null=True, blank=True
     )
     level_start_date = models.DateField(_("level start date"))
     level_completion_date = models.DateField(_("level completion date"), null=True, blank=True)
@@ -103,7 +104,7 @@ class StudentLevelHistory(UUIDModel):
         help_text=_("User who changed the level"),
     )
     start_date = models.DateField(_("start date"))
-    completion_date = models.DateField(_("completion date"), auto_now_add=True)
+    completion_date = models.DateField(_("completion date"), auto_now_add=True, null=True, blank=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
 
     class Meta:

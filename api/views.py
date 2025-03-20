@@ -139,7 +139,7 @@ class CentreViewSet(viewsets.ModelViewSet):
         responses={200: OpenApiTypes.OBJECT},
     )
     @action(detail=True, methods=["post"])
-    def reset_password(self, request, pk=None):
+    def reset_password(self, request, uuid=None):
         """Reset password for centre user"""
         centre = self.get_object()
         new_password = get_random_string(length=12)
@@ -171,7 +171,7 @@ class CentreViewSet(viewsets.ModelViewSet):
         responses={200: StudentSerializer(many=True)},
     )
     @action(detail=True)
-    def students(self, request, pk=None):
+    def students(self, request, uuid=None):
         """Get list of students for a centre"""
         centre = self.get_object()
         students = centre.students.all()
@@ -226,7 +226,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     @extend_schema(description="Reset password for student", responses={200: OpenApiTypes.OBJECT})
     @action(detail=True, methods=["post"])
-    def reset_password(self, request, pk=None):
+    def reset_password(self, request, uuid=None):
         """Reset password for student"""
         student = self.get_object()
         new_password = get_random_string(length=12)
@@ -273,7 +273,7 @@ class StudentViewSet(viewsets.ModelViewSet):
         responses={200: StudentLevelHistorySerializer(many=True)},
     )
     @action(detail=True)
-    def level_history(self, request, pk=None):
+    def level_history(self, request, uuid=None):
         """Get level history for a student"""
         student = self.get_object()
         history = student.level_history.all().select_related(
