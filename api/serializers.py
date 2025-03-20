@@ -147,10 +147,6 @@ class StudentSerializer(serializers.ModelSerializer):
         slug_field="uuid",
         queryset=Level.objects.all(),
     )
-    ci = serializers.SlugRelatedField(
-        slug_field="uuid",
-        queryset=CI.objects.all(),
-    )
     level_name = serializers.CharField(source="current_level.name", read_only=True)
     tests_taken = serializers.SerializerMethodField()
 
@@ -158,7 +154,6 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             "uuid",
-            "ci",
             "user",
             "name",
             "dob",
@@ -189,7 +184,6 @@ class StudentSerializer(serializers.ModelSerializer):
 
         # Store generated password to return in response
         user.generated_password = generated_password
-        print(generated_password,"generated_password")
 
         # Create student
         student = Student.objects.create(user=user, **validated_data)
