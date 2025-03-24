@@ -1,6 +1,8 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from tests_app.urls import urlpatterns as tests_urls
+
 from . import views
 
 # Create a router and register our viewsets with it
@@ -12,7 +14,6 @@ router.register(
     views.StudentLevelHistoryViewSet,
     basename="student-level-history",
 )
-router.register(r"levels", views.LevelViewSet, basename="level")
 
 # Authentication URLs
 auth_urls = [
@@ -24,4 +25,5 @@ auth_urls = [
 urlpatterns = [
     path("auth/", include(auth_urls)),
     path("", include(router.urls)),
+    path("tests/", include(tests_urls)),
 ]
