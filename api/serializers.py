@@ -68,6 +68,7 @@ class CentreSerializer(serializers.ModelSerializer):
     user = CentreUserSerializer()
     cis = CISerializer(many=True, required=False)
     student_count = serializers.SerializerMethodField(read_only=True)
+    active_students_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Centre
@@ -79,12 +80,16 @@ class CentreSerializer(serializers.ModelSerializer):
             "is_active",
             "cis",
             "student_count",
+            "active_students_count",
             "created_at",
         ]
         read_only_fields = ["uuid"]
 
     def get_student_count(self, obj):
-        return obj.students.count()
+        return User.objects.filter(user_type="STUDENT").count()
+
+    def get_active_students_count(self, obj):
+        return User.objects.filter(user_type="STUDENT", is_active=True).count()
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
