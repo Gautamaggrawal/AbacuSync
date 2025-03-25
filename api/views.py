@@ -309,7 +309,7 @@ class StudentViewSet(viewsets.ModelViewSet):
         """Get level history for a student"""
         student = self.get_object()
         history = student.level_history.all().select_related(
-            "previous_level", "new_level", "changed_by"
+            "new_level", "changed_by"
         )
         serializer = StudentLevelHistorySerializer(history, many=True)
         return Response(serializer.data)
@@ -339,7 +339,7 @@ class StudentLevelHistoryViewSet(viewsets.ModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return StudentLevelHistory.objects.none()
         queryset = StudentLevelHistory.objects.all().select_related(
-            "student", "previous_level", "new_level", "changed_by"
+            "student", "new_level", "changed_by"
         )
         if self.request.user.user_type == "CENTRE":
             return queryset.filter(student__centre__user=self.request.user)
