@@ -14,6 +14,7 @@ router.register(
     views.StudentLevelHistoryViewSet,
     basename="student-level-history",
 )
+router.register(r"levels", views.LevelViewSet, basename="level")
 
 # Authentication URLs
 auth_urls = [

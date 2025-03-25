@@ -166,7 +166,6 @@ class StudentSerializer(serializers.ModelSerializer):
             "current_level",
             "level_start_date",
             "level_completion_date",
-            "is_active",
             "level_name",
             "tests_taken",
         ]

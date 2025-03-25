@@ -59,7 +59,7 @@ class Student(UUIDModel):
     )
     level_start_date = models.DateField(_("level start date"))
     level_completion_date = models.DateField(_("level completion date"), null=True, blank=True)
-    is_active = models.BooleanField(_("active"), default=True)
+    # is_active = models.BooleanField(_("active"), default=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
 
@@ -67,8 +67,7 @@ class Student(UUIDModel):
         verbose_name = _("student")
         verbose_name_plural = _("students")
         indexes = [
-            models.Index(fields=["is_active"]),
-            models.Index(fields=["centre", "is_active"]),
+            models.Index(fields=["centre",]),
         ]
 
     def __str__(self):

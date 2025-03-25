@@ -14,9 +14,8 @@ class StudentAdmin(admin.ModelAdmin):
         "centre",
         "ci",
         "current_level",
-        "is_active",
     )
-    list_filter = ("is_active", "gender", "centre", "current_level", "level_start_date")
+    list_filter = ("gender", "centre", "current_level", "level_start_date")
     search_fields = (
         "name",
         "user__phone_number",
