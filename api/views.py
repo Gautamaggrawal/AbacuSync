@@ -258,22 +258,20 @@ class StudentViewSet(viewsets.ModelViewSet):
             student.user.is_active = not student.user.is_active
 
             # If student is being activated
-            if student.user.is_active and was_inactive:
-                # Set default level if not set
-                if not student.current_level:
-                    default_level = Level.objects.first()
-                    current_date = timezone.now().date()
-                    student.current_level = default_level
-                    student.level_start_date = current_date
-
-                    # Create level history entry
-                    StudentLevelHistory.objects.create(
-                        student=student,
-                        new_level=default_level,
-                        start_date=current_date,
-                        completion_date=None,
-                        changed_by=request.user,
-                    )
+            current_date = timezone.now().date()
+            if (
+                student.user.is_active
+                and was_inactive
+                and not StudentLevelHistory.objects.filter(student=student).exist()
+            ):
+                # Create level history entry
+                StudentLevelHistory.objects.create(
+                    student=student,
+                    new_level=student.current_level,
+                    start_date=current_date,
+                    completion_date=None,
+                    changed_by=request.user,
+                )
 
             # Save both user and student models
             student.user.save()
@@ -308,9 +306,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     def level_history(self, request, uuid=None):
         """Get level history for a student"""
         student = self.get_object()
-        history = student.level_history.all().select_related(
-            "new_level", "changed_by"
-        )
+        history = student.level_history.all().select_related("new_level", "changed_by")
         serializer = StudentLevelHistorySerializer(history, many=True)
         return Response(serializer.data)
 

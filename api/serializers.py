@@ -86,10 +86,10 @@ class CentreSerializer(serializers.ModelSerializer):
         read_only_fields = ["uuid"]
 
     def get_student_count(self, obj):
-        return User.objects.filter(user_type="STUDENT").count()
+        return obj.students.count()
 
     def get_active_students_count(self, obj):
-        return User.objects.filter(user_type="STUDENT", is_active=True).count()
+        return obj.students.filter(user__is_active=True).count()
 
     def create(self, validated_data):
         user_data = validated_data.pop("user")
@@ -194,15 +194,15 @@ class StudentSerializer(serializers.ModelSerializer):
         return student
 
     def update(self, instance, validated_data):
-        user_data = validated_data.pop("user", {})
+        # Handle nested user data if provided
+        if 'user' in validated_data:
+            user_data = validated_data.pop('user')
+            user = instance.user
+            user_serializer = StudentUserSerializer(user, data=user_data, partial=True)
+            if user_serializer.is_valid():
+                user_serializer.save()
 
-        # Update user
-        user = instance.user
-        for attr, value in user_data.items():
-            setattr(user, attr, value)
-        user.save()
-
-        # Update student
+        # Update student instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
