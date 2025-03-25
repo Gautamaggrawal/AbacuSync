@@ -45,9 +45,10 @@ class ExcelUploadView(APIView):
     list=extend_schema(description="List all available tests for the student", tags=["Tests"]),
     retrieve=extend_schema(description="Get details of a specific test", tags=["Tests"]),
 )
-class TestViewSet(viewsets.ReadOnlyModelViewSet):
+class TestViewSet(viewsets.ModelViewSet):
     serializer_class = TestSerializer
     permission_classes = [IsAuthenticated]
+    lookup_field = "uuid"
 
     def get_queryset(self):
         """
@@ -75,7 +76,12 @@ class TestViewSet(viewsets.ReadOnlyModelViewSet):
         Optional: Add custom logic for list view if needed
         For example, adding extra context or filtering
         """
+        level = self.request.query_params.get("level")
+
         queryset = self.filter_queryset(self.get_queryset())
+
+        if level:
+            queryset = queryset.filter(level__uuid=level)
 
         # Optional: Add extra filtering or context
         if request.user.user_type == "STUDENT":

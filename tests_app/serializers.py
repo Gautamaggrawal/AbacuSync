@@ -17,7 +17,7 @@ class ExcelUploadSerializer(serializers.Serializer):
         queryset=Level.objects.all(),
     )
     title = serializers.CharField(max_length=200)
-    question_type = serializers.CharField(max_length=10)
+    section_type = serializers.CharField(max_length=10)
 
     def validate(self, data):
         """Validate the uploaded file and data"""
@@ -51,7 +51,7 @@ class ExcelUploadSerializer(serializers.Serializer):
         file = validated_data["file"]
         level_id = validated_data["level_id"]
         title = validated_data["title"]
-        question_type = validated_data["question_type"]
+        section_type = validated_data["section_type"]
 
         # Read the Excel file
         df = pd.read_excel(file, index_col=0)
@@ -64,7 +64,9 @@ class ExcelUploadSerializer(serializers.Serializer):
         max_order = test.sections.aggregate(Max("order"))["order__max"] or 0
 
         # Create new section with incremented order
-        section = TestSection.objects.create(test=test, title=question_type, order=max_order + 1)
+        section = TestSection.objects.create(
+            test=test, section_type=section_type, order=max_order + 1
+        )
 
         # Remove empty columns and the 'ans' column
         df = df.dropna(axis=1, how="all")  # Drop completely empty columns
@@ -101,16 +103,27 @@ class TestSectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TestSection
-        fields = ["uuid", "title", "order", "questions"]
+        fields = ["uuid", "section_type", "order", "questions"]
 
 
 class TestSerializer(serializers.ModelSerializer):
     sections = TestSectionSerializer(many=True, read_only=True)
     duration_remaining = serializers.SerializerMethodField()
+    level_uuid = serializers.UUIDField(source="level.uuid")
 
     class Meta:
         model = Test
-        fields = ["uuid", "title", "level", "duration_minutes", "sections", "duration_remaining"]
+        fields = [
+            "uuid",
+            "title",
+            "level",
+            "level_uuid",
+            "duration_minutes",
+            "sections",
+            "duration_remaining",
+            "due_date",
+            "created_at",
+        ]
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_duration_remaining(self, obj):

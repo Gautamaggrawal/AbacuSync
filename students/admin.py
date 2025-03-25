@@ -44,20 +44,18 @@ class StudentAdmin(admin.ModelAdmin):
 class StudentLevelHistoryAdmin(admin.ModelAdmin):
     list_display = (
         "student",
-        "previous_level",
         "new_level",
         "start_date",
         "completion_date",
         "changed_by",
     )
-    list_filter = ("start_date", "completion_date", "previous_level", "new_level")
+    list_filter = ("start_date", "completion_date", "new_level")
     search_fields = (
         "student__name",
         "student__user__phone_number",
-        "previous_level__name",
         "new_level__name",
     )
-    raw_id_fields = ("student", "previous_level", "new_level", "changed_by")
+    raw_id_fields = ("student", "new_level", "changed_by")
     date_hierarchy = "start_date"
 
 

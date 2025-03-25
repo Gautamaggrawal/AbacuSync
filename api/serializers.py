@@ -208,7 +208,6 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class StudentLevelHistorySerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source="student.name", read_only=True)
-    previous_level_name = serializers.CharField(source="previous_level.name", read_only=True)
     new_level_name = serializers.CharField(source="new_level.name", read_only=True)
     changed_by_name = serializers.CharField(source="changed_by.get_full_name", read_only=True)
     new_level = serializers.SlugRelatedField(
@@ -225,14 +224,12 @@ class StudentLevelHistorySerializer(serializers.ModelSerializer):
         fields = [
             "uuid",
             "student",
-            "previous_level",
             "new_level",
-            "changed_by",
+            # "changed_by",
             "start_date",
             "completion_date",
             "created_at",
             "student_name",
-            "previous_level_name",
             "new_level_name",
             "changed_by_name",
         ]

@@ -18,6 +18,7 @@ class Test(UUIDModel):
         related_name="tests",
         help_text=_("Level this test is designed for"),
     )
+    due_date = models.DateTimeField(_("Due date"), null=True, blank=True)
     duration_minutes = models.IntegerField(_("duration (minutes)"), default=8)
     is_active = models.BooleanField(_("active"), default=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
@@ -44,7 +45,7 @@ class TestSection(UUIDModel):
         related_name="sections",
         help_text=_("Test this section belongs to"),
     )
-    title = models.CharField(_("title"), max_length=100)
+    section_type = models.CharField(_("Section Type"), max_length=100)
     order = models.IntegerField(_("order"))
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
@@ -58,7 +59,7 @@ class TestSection(UUIDModel):
         ]
 
     def __str__(self):
-        return f"{self.test.title} - {self.title}"
+        return f"{self.section_type}"
 
 
 class Question(UUIDModel):

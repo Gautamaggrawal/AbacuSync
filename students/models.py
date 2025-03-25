@@ -84,14 +84,6 @@ class StudentLevelHistory(UUIDModel):
         related_name="level_history",
         help_text=_("Student whose level is being changed"),
     )
-    previous_level = models.ForeignKey(
-        Level,
-        on_delete=models.CASCADE,
-        related_name="previous_students",
-        null=True,
-        blank=True,
-        help_text=_("Previous level of the student"),
-    )
     new_level = models.ForeignKey(
         Level,
         on_delete=models.CASCADE,
@@ -103,6 +95,8 @@ class StudentLevelHistory(UUIDModel):
         on_delete=models.CASCADE,
         related_name="level_changes",
         help_text=_("User who changed the level"),
+        null=True,
+        blank=True,
     )
     start_date = models.DateField(_("start date"))
     completion_date = models.DateField(
@@ -118,4 +112,4 @@ class StudentLevelHistory(UUIDModel):
         ]
 
     def __str__(self):
-        return f"{self.student.name} - {self.previous_level} to {self.new_level}"
+        return f"{self.student.name} -{self.new_level}"

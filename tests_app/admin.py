@@ -20,9 +20,9 @@ class TestAdmin(admin.ModelAdmin):
 
 @admin.register(TestSection)
 class TestSectionAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "test", "order", "created_at")
+    list_display = ("id", "section_type", "test", "order", "created_at")
     list_filter = ("test",)
-    search_fields = ("title", "test__title")
+    search_fields = ("section_type", "test__section_type")
     ordering = ("test", "order")
     list_editable = ("order",)
 

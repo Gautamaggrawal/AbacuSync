@@ -1,6 +1,8 @@
 from django.contrib.auth import login
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -244,14 +246,44 @@ class StudentViewSet(viewsets.ModelViewSet):
         responses={200: OpenApiTypes.OBJECT},
     )
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def toggle_active(self, request, uuid=None):
-        """Toggle active status of student"""
-        student = self.get_object()
-        student.is_active = not student.is_active
-        student.user.is_active = student.is_active
-        student.user.save()
-        student.save()
-        return Response({"status": "success", "is_active": student.is_active})
+        """Toggle active status of student with atomic transaction"""
+        try:
+            # Retrieve the student object within the transaction
+            student = self.get_object()
+            was_inactive = not student.user.is_active  # Check if the user was inactive
+
+            # Toggle the active status
+            student.user.is_active = not student.user.is_active
+
+            # If student is being activated
+            if student.user.is_active and was_inactive:
+                # Set default level if not set
+                if not student.current_level:
+                    default_level = Level.objects.first()
+                    current_date = timezone.now().date()
+                    student.current_level = default_level
+                    student.level_start_date = current_date
+
+                    # Create level history entry
+                    StudentLevelHistory.objects.create(
+                        student=student,
+                        new_level=default_level,
+                        start_date=current_date,
+                        completion_date=None,
+                        changed_by=request.user,
+                    )
+
+            # Save both user and student models
+            student.user.save()
+            student.save()
+
+            return Response({"status": "success", "is_active": student.user.is_active})
+
+        except Exception as e:
+            # Rollback will be automatic due to @transaction.atomic
+            return Response({"status": "error", "message": str(e)}, status=400)
 
     @extend_schema(description="Approve student (admin only)", responses={200: OpenApiTypes.OBJECT})
     @action(detail=True, methods=["post"])
@@ -314,20 +346,30 @@ class StudentLevelHistoryViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        # When level history is created, update student's current level
-        student = serializer.validated_data["student"]
-        new_level = serializer.validated_data["new_level"]
+        """
+        Efficiently create a new level history entry with atomic transaction
+        - Updates previous level history completion date
+        - Sets new student level
+        - Ensures data consistency
+        """
+        with transaction.atomic():
+            student = serializer.validated_data["student"]
+            new_level = serializer.validated_data["new_level"]
+            curr_date = timezone.now().date()
 
-        # Set previous level before updating
-        previous_level = student.current_level
-        serializer.validated_data["previous_level"] = previous_level
+            # Efficiently update last uncompleted level history in a single query
+            StudentLevelHistory.objects.filter(
+                student=student, completion_date__isnull=True
+            ).update(completion_date=curr_date)
 
-        # Update student's current level
-        student.current_level = new_level
-        student.level_start_date = serializer.validated_data["start_date"]
-        student.save()
+            # Bulk update student attributes
+            Student.objects.filter(pk=student.pk).update(
+                current_level=new_level, level_start_date=curr_date
+            )
 
-        serializer.save(changed_by=self.request.user)
+            # Create new level history with the current user
+            level_history = serializer.save(changed_by=self.request.user)
+            return level_history
 
 
 @extend_schema_view(

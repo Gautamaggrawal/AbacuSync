@@ -6,7 +6,7 @@ from .views import ExcelUploadView, StudentTestViewSet, TestViewSet
 router = DefaultRouter()
 
 router.register(r"student-test", StudentTestViewSet, basename="student-test")
-router.register(r"tests", TestViewSet, basename="test")
+router.register(r"available-test", TestViewSet, basename="test")
 
 urlpatterns = [
     path("", include(router.urls)),
