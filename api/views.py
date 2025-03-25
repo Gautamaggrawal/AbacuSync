@@ -262,7 +262,7 @@ class StudentViewSet(viewsets.ModelViewSet):
             if (
                 student.user.is_active
                 and was_inactive
-                and not StudentLevelHistory.objects.filter(student=student).exist()
+                and not StudentLevelHistory.objects.filter(student=student).exists()
             ):
                 # Create level history entry
                 StudentLevelHistory.objects.create(
