@@ -12,9 +12,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="studentlevelhistory",
             name="completion_date",
-            field=models.DateField(
-                blank=True, null=True, verbose_name="completion date"
-            ),
+            field=models.DateField(blank=True, null=True, verbose_name="completion date"),
         ),
         migrations.AlterField(
             model_name="studentlevelhistory",

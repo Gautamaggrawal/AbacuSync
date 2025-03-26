@@ -195,8 +195,8 @@ class StudentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # Handle nested user data if provided
-        if 'user' in validated_data:
-            user_data = validated_data.pop('user')
+        if "user" in validated_data:
+            user_data = validated_data.pop("user")
             user = instance.user
             user_serializer = StudentUserSerializer(user, data=user_data, partial=True)
             if user_serializer.is_valid():

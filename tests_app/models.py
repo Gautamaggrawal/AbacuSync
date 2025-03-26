@@ -65,6 +65,13 @@ class TestSection(UUIDModel):
 class Question(UUIDModel):
     """Questions for tests"""
 
+    class QuestionType(models.TextChoices):
+        """Enum for different types of questions"""
+
+        PLUS = "plus", _("Plus/Addition")
+        MULTIPLE = "multiply", _("Multiply")
+        DIVIDE = "divide", _("Divide/Division")
+
     section = models.ForeignKey(
         TestSection,
         on_delete=models.CASCADE,
@@ -74,6 +81,12 @@ class Question(UUIDModel):
     text = models.TextField(_("question text"))
     order = models.IntegerField(_("order"))
     marks = models.IntegerField(_("marks"), default=1)
+    question_type = models.CharField(
+        _("question type"),
+        max_length=20,
+        choices=QuestionType.choices,
+        default=QuestionType.MULTIPLE,
+    )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
 
@@ -81,9 +94,7 @@ class Question(UUIDModel):
         verbose_name = _("question")
         verbose_name_plural = _("questions")
         ordering = ["order"]
-        indexes = [
-            models.Index(fields=["section", "order"]),
-        ]
+        indexes = [models.Index(fields=["section", "question_type", "order"])]
 
     def __str__(self):
         return f"Question {self.order} - {self.section.test.title}"

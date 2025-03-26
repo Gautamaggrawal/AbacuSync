@@ -82,7 +82,11 @@ class ExcelUploadSerializer(serializers.Serializer):
             calculation_values = [int(val) for val in values[:-1] if pd.notna(val)]
             if calculation_values:
                 Question.objects.create(
-                    section=section, text=str(calculation_values), order=c, marks=1  # Default marks
+                    section=section,
+                    text=str(calculation_values),
+                    order=c,
+                    marks=1,
+                    question_type=Question.QuestionType.PLUS,
                 )
             print(calculation_values, "calculation_values")
 
@@ -142,9 +146,9 @@ class StudentAnswerSerializer(serializers.ModelSerializer):
 
 
 class StudentTestSerializer(serializers.ModelSerializer):
-    test = TestSerializer(context={"student_test": None})
+    test = TestSerializer(read_only=True)
+    remaining_duration = serializers.SerializerMethodField()
     answers = StudentAnswerSerializer(many=True, read_only=True)
-    duration = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentTest
@@ -154,17 +158,21 @@ class StudentTestSerializer(serializers.ModelSerializer):
             "status",
             "start_time",
             "end_time",
-            "score",
-            "current_section",
+            "remaining_duration",
             "answers",
-            "duration",
         ]
-        read_only_fields = ["status", "start_time", "end_time", "score"]
+        read_only_fields = ["uuid", "status", "start_time", "end_time"]
 
-    @extend_schema_field(OpenApiTypes.FLOAT)
-    def get_duration(self, obj):
-        """Get test duration in minutes"""
-        return obj.duration
+    def get_remaining_duration(self, obj):
+        """Get remaining duration in seconds"""
+        if obj.status not in ["IN_PROGRESS", "INTERRUPTED"]:
+            return 0
+
+        session = obj.session
+        if not session:
+            return 0
+
+        return max(0, session.remaining_time_seconds)
 
     def to_representation(self, instance):
         """Add test context for duration calculation"""
@@ -210,3 +218,10 @@ class TestResultSerializer(serializers.ModelSerializer):
     def get_duration(self, obj):
         """Get test duration in minutes"""
         return obj.duration
+
+
+class TestAnswerSerializer(serializers.Serializer):
+    """Serializer for submitting a single answer"""
+
+    question = serializers.UUIDField()
+    answer_text = serializers.CharField()
