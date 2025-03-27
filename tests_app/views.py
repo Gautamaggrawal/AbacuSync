@@ -379,6 +379,19 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             answer_text=serializer.validated_data["answer_text"],
         )
 
+        stu_ans = StudentAnswer.objects.filter(
+            student_test=student_test,
+            question=question,
+        )
+        if stu_ans.exists():
+            stu_ans.update(answer_text=serializer.validated_data["answer_text"])
+        else:
+            StudentAnswer.objects.create(
+                student_test=student_test,
+                question=question,
+                answer_text=serializer.validated_data["answer_text"],
+            )
+
         return Response(
             {
                 "status": "Answer submitted successfully",
