@@ -1,5 +1,7 @@
+from datetime import timedelta
+
 import pandas as pd
-from django.db.models import Max
+from django.db.models import Count, Max, Sum
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -212,6 +214,86 @@ class TestSubmissionSerializer(serializers.Serializer):
     """Serializer for submitting test answers"""
 
     answers = serializers.ListField(child=AnswerSubmissionSerializer())
+
+
+class SimplifiedAnswerSerializer(serializers.ModelSerializer):
+    question_text = serializers.CharField(source="question.text")
+    question_order = serializers.IntegerField(source="question.order")
+
+    class Meta:
+        model = StudentAnswer
+        fields = [
+            "question_text",
+            "question_order",
+            "answer_text",
+            "is_correct",
+            "marks_obtained",
+        ]
+
+
+class EnhancedTestResultSerializer(serializers.ModelSerializer):
+    total_questions = serializers.SerializerMethodField()
+    total_marks = serializers.SerializerMethodField()
+    marks_obtained = serializers.SerializerMethodField()
+    correct_answers = serializers.SerializerMethodField()
+    incorrect_answers = serializers.SerializerMethodField()
+    accuracy_percentage = serializers.SerializerMethodField()
+    completion_time = serializers.SerializerMethodField()
+    answers = SimplifiedAnswerSerializer(source="answers.all", many=True)
+
+    class Meta:
+        model = StudentTest
+        fields = [
+            "uuid",
+            "status",
+            "start_time",
+            "end_time",
+            "total_questions",
+            "total_marks",
+            "marks_obtained",
+            "correct_answers",
+            "incorrect_answers",
+            "accuracy_percentage",
+            "completion_time",
+            "answers",
+        ]
+
+    def get_total_questions(self, obj):
+        return (
+            obj.test.sections.aggregate(total=Sum(Count("questions")))["total"]
+            or 0
+        )
+
+    def get_total_marks(self, obj):
+        return (
+            obj.test.sections.aggregate(total=Sum("questions__marks"))["total"]
+            or 0
+        )
+
+    def get_marks_obtained(self, obj):
+        return obj.answers.aggregate(total=Sum("marks_obtained"))["total"] or 0
+
+    def get_correct_answers(self, obj):
+        return obj.answers.filter(is_correct=True).count()
+
+    def get_incorrect_answers(self, obj):
+        return obj.answers.filter(is_correct=False).count()
+
+    def get_accuracy_percentage(self, obj):
+        total = obj.answers.count()
+        if total == 0:
+            return 0
+        correct = obj.answers.filter(is_correct=True).count()
+        return round((correct / total) * 100, 2)
+
+    def get_completion_time(self, obj):
+        if obj.start_time and obj.end_time:
+            duration = (obj.end_time - obj.start_time).total_seconds()
+            return {
+                "seconds": int(duration),
+                "formatted": str(timedelta(seconds=int(duration))),
+            }
+        return None
 
 
 class TestResultSerializer(serializers.ModelSerializer):

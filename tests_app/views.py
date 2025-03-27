@@ -19,6 +19,7 @@ from tests_app.models import (
 )
 
 from .serializers import (
+    EnhancedTestResultSerializer,
     ExcelUploadSerializer,
     StudentTestSerializer,
     TestAnswerSerializer,
@@ -373,11 +374,6 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         question = get_object_or_404(
             Question, uuid=serializer.validated_data["question"]
         )
-        StudentAnswer.objects.update_or_create(
-            student_test=student_test,
-            question=question,
-            answer_text=serializer.validated_data["answer_text"],
-        )
 
         stu_ans = StudentAnswer.objects.filter(
             student_test=student_test,
@@ -435,7 +431,7 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def result(self, request, *args, **kwargs):
-        """Get test result"""
+        """Get detailed test result with metrics"""
         student_test = self.get_object()
 
         if student_test.status != "COMPLETED":
@@ -444,7 +440,12 @@ class StudentTestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = TestResultSerializer(student_test)
+        # Efficiently fetch all related data
+        student_test = StudentTest.objects.prefetch_related(
+            "answers__question", "test__sections__questions"
+        ).get(id=student_test.id)
+
+        serializer = EnhancedTestResultSerializer(student_test)
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
