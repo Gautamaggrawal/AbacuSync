@@ -445,12 +445,12 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         ).select_related("question")
 
         response_data = {
-            "test_id": str(student_test.uuid),
+            "student_test_uuid": str(student_test.uuid),
             "test_title": student_test.test.title,
             "status": student_test.status,
             "answers": [
                 {
-                    "question_id": str(answer.question.uuid),
+                    "question_uuid": str(answer.question.uuid),
                     "question_text": answer.question.text,
                     "question_order": answer.question.order,
                     "answer_text": answer.answer_text,

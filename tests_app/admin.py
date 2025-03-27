@@ -62,6 +62,7 @@ class QuestionAdmin(admin.ModelAdmin):
 @admin.register(StudentTest)
 class StudentTestAdmin(admin.ModelAdmin):
     list_display = (
+        "uuid",
         "id",
         "student",
         "test",
