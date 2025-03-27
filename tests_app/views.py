@@ -445,12 +445,12 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             {
                 "status": "Answer submitted and evaluated successfully",
                 "remaining_time": remaining_time,
-                "evaluation": {
-                    "is_correct": evaluation["is_correct"],
-                    "marks_obtained": evaluation["marks_obtained"],
-                    "expected_answer": evaluation["expected_answer"],
-                    "error": evaluation.get("error"),
-                },
+                # "evaluation": {
+                #     "is_correct": evaluation["is_correct"],
+                #     "marks_obtained": evaluation["marks_obtained"],
+                #     "expected_answer": evaluation["expected_answer"],
+                #     "error": evaluation.get("error"),
+                # },
             }
         )
 

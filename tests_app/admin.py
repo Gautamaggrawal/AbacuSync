@@ -48,12 +48,12 @@ class QuestionAdmin(admin.ModelAdmin):
         "uuid",
         "id",
         "text",
-        "section",
+        "question_type",
         "order",
         "marks",
         "created_at",
     )
-    list_filter = ("section",)
+    list_filter = ("question_type",)
     search_fields = ("text", "section__title")
     ordering = ("section", "order")
     list_editable = ("order", "marks")
