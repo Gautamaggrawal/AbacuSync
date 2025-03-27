@@ -373,7 +373,7 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         question = get_object_or_404(
             Question, uuid=serializer.validated_data["question"]
         )
-        StudentAnswer.objects.create(
+        StudentAnswer.objects.update_or_create(
             student_test=student_test,
             question=question,
             answer_text=serializer.validated_data["answer_text"],
