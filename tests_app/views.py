@@ -112,6 +112,11 @@ class TestViewSet(viewsets.ModelViewSet):
         responses={200: TestResultSerializer, 400: OpenApiTypes.OBJECT},
         tags=["Tests"],
     ),
+    answers=extend_schema(
+        description="Get all submitted answers for this test",
+        responses={200: OpenApiTypes.OBJECT},
+        tags=["Tests"],
+    ),
 )
 class StudentTestViewSet(viewsets.ModelViewSet):
     serializer_class = StudentTestSerializer
@@ -428,3 +433,33 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
         serializer = TestResultSerializer(student_test)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def answers(self, request, *args, **kwargs):
+        """Get all submitted answers for this test"""
+        student_test = self.get_object()
+
+        # Get all answers for this test
+        answers = StudentAnswer.objects.filter(
+            student_test=student_test
+        ).select_related("question")
+
+        response_data = {
+            "test_id": str(student_test.uuid),
+            "test_title": student_test.test.title,
+            "status": student_test.status,
+            "answers": [
+                {
+                    "question_id": str(answer.question.uuid),
+                    "question_text": answer.question.text,
+                    "question_order": answer.question.order,
+                    "answer_text": answer.answer_text,
+                    "is_correct": answer.is_correct,
+                    "marks_obtained": answer.marks_obtained,
+                    "submitted_at": answer.created_at,
+                }
+                for answer in answers
+            ],
+        }
+
+        return Response(response_data)
