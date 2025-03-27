@@ -15,9 +15,11 @@ from tests_app.models import (
     TestSection,
 )
 
+from .utils import AnswerEvaluator
+
 
 class ExcelUploadSerializer(serializers.Serializer):
-    """Serializer for handling Excel file uploads"""
+    """Optimized Serializer for handling Excel file uploads"""
 
     file = serializers.FileField()
     level_id = serializers.SlugRelatedField(
@@ -28,92 +30,121 @@ class ExcelUploadSerializer(serializers.Serializer):
     section_type = serializers.CharField(max_length=10)
 
     def validate(self, data):
-        """Validate the uploaded file and data"""
+        """Improved file validation with more robust checks"""
         file = data.get("file")
         if not file:
             raise serializers.ValidationError("No file was uploaded")
 
-        if not file.name.endswith((".xlsx", ".xls")):
-            raise serializers.ValidationError("File must be an Excel file")
-
-        try:
-            # Read the Excel file
-            df = pd.read_excel(file)
-            # df.fillna(0, inplace=True)
-
-            # Validate required columns
-            required_columns = ["No."]
-            missing_columns = [
-                col for col in required_columns if col not in df.columns
-            ]
-            if missing_columns:
-                raise serializers.ValidationError(
-                    f"Missing required columns: {', '.join(missing_columns)}"
-                )
-
-            return data
-
-        except Exception as e:
+        # Use a more comprehensive file extension check
+        valid_extensions = (".xlsx", ".xls", ".xlsm")
+        if not any(file.name.lower().endswith(ext) for ext in valid_extensions):
             raise serializers.ValidationError(
-                f"Error processing file: {str(e)}"
+                f"File must be one of: {', '.join(valid_extensions)}"
             )
 
+        if data.get("section_type") == "ADD":
+            try:
+                # Use context manager for file handling
+                with pd.ExcelFile(file) as xls:
+                    df = pd.read_excel(xls)
+
+                # More flexible column validation
+                required_columns = ["No."]
+                missing_columns = [
+                    col for col in required_columns if col not in df.columns
+                ]
+                if missing_columns:
+                    raise serializers.ValidationError(
+                        f"Missing required columns: {', '.join(missing_columns)}"
+                    )
+                return data
+
+            except Exception as e:
+                raise serializers.ValidationError(
+                    f"Error processing file: {str(e)}"
+                )
+        return data
+
     def create(self, validated_data):
-        """Create test and questions from Excel file"""
+        """Refactored method with improved performance and readability"""
         file = validated_data["file"]
         level_id = validated_data["level_id"]
         title = validated_data["title"]
         section_type = validated_data["section_type"]
 
-        # Read the Excel file
-        df = pd.read_excel(file, index_col=0)
-        # df.fillna(0, inplace=True)
+        # Use context manager for file handling
+        with pd.ExcelFile(file) as xls:
+            df = pd.read_excel(xls, index_col=0)
 
-        # Create test
+        # Create test with a single database query
         test = Test.objects.create(title=title, level=level_id)
-        # Get the maximum existing order for this test's sections
-        # If no sections exist, start with order 1
-        max_order = test.sections.aggregate(Max("order"))["order__max"] or 0
 
-        # Create new section with incremented order
+        # More efficient section order calculation
+        max_order = test.sections.aggregate(Max("order"))["order__max"] or 0
         section = TestSection.objects.create(
             test=test, section_type=section_type, order=max_order + 1
         )
 
-        # Remove empty columns and the 'ans' column
-        df = df.dropna(axis=1, how="all")  # Drop completely empty columns
-        df = df[[col for col in df.columns if col != "ans"]]
-        c = 0
+        # Separate methods for different section types
+        if section_type == "MUL_DIV":
+            self._create_mul_div_questions(section, df)
+        else:
+            self._create_addition_questions(section, df)
 
-        for col in df.columns:
-            # Get the values for the current question column
+        return test
+
+    def _create_mul_div_questions(self, section, df):
+        """Create multiplication and division questions"""
+        for i, row in df.iterrows():
+            values = [val for val in row.dropna().tolist()]
+            if not values or len(values) < 3:
+                continue
+
+            question_type = (
+                Question.QuestionType.MULTIPLY
+                if values[1] in ["x", "X", "*"]
+                else Question.QuestionType.DIVIDE
+                if values[1] in ["÷", "/"]
+                else None
+            )
+
+            if question_type:
+                Question.objects.create(
+                    section=section,
+                    text=str([values[0], values[2]]),
+                    order=i,
+                    marks=1,
+                    question_type=question_type,
+                )
+
+    def _create_addition_questions(self, section, df):
+        """Create addition questions"""
+        # Remove empty columns and the 'ans' column
+        df = df.dropna(axis=1, how="all")
+        df = df[[col for col in df.columns if col != "ans"]]
+
+        for idx, col in enumerate(df.columns, 1):
             values = df[col].tolist()
-            c += 1
 
             # Remove NaN values and convert to integers
             calculation_values = [
                 int(val) for val in values[:-1] if pd.notna(val)
             ]
+
             if calculation_values:
                 Question.objects.create(
                     section=section,
                     text=str(calculation_values),
-                    order=c,
+                    order=idx,
                     marks=1,
                     question_type=Question.QuestionType.PLUS,
                 )
-            print(calculation_values, "calculation_values")
-
-            # Skip if no valid values
-            if not calculation_values:
-                continue
-        return test
 
 
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ["uuid", "text", "order", "marks"]
+        fields = ["uuid", "text", "order", "marks", "question_type"]
 
 
 class TestSectionSerializer(serializers.ModelSerializer):
@@ -234,16 +265,10 @@ class SimplifiedAnswerSerializer(serializers.ModelSerializer):
 
     def get_correct_answer_value(self, obj):
         """Get correct answer based on question type"""
-        try:
-            if obj.question.question_type == Question.QuestionType.PLUS:
-                import ast
-
-                numbers = ast.literal_eval(obj.question.text)
-                return str(sum(numbers))
-            # Add other question types here as needed
-            return None
-        except (ValueError, SyntaxError, TypeError):
-            return None
+        expected_answer = AnswerEvaluator.calculate_answer(obj.question)
+        return AnswerEvaluator.format_answer(
+            expected_answer, obj.question.question_type
+        )
 
 
 class EnhancedTestResultSerializer(serializers.ModelSerializer):

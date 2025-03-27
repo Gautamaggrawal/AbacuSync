@@ -69,7 +69,7 @@ class Question(UUIDModel):
         """Enum for different types of questions"""
 
         PLUS = "plus", _("Plus/Addition")
-        MULTIPLE = "multiply", _("Multiply")
+        MULTIPLY = "multiply", _("Multiply")
         DIVIDE = "divide", _("Divide/Division")
 
     section = models.ForeignKey(
@@ -85,7 +85,7 @@ class Question(UUIDModel):
         _("question type"),
         max_length=20,
         choices=QuestionType.choices,
-        default=QuestionType.MULTIPLE,
+        default=QuestionType.PLUS,
     )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)

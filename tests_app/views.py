@@ -17,8 +17,7 @@ from tests_app.models import (
     Test,
     TestSession,
 )
-
-from .serializers import (
+from tests_app.serializers import (
     EnhancedTestResultSerializer,
     ExcelUploadSerializer,
     StudentTestSerializer,
@@ -27,6 +26,8 @@ from .serializers import (
     TestSerializer,
     TestSubmissionSerializer,
 )
+
+from .utils import AnswerEvaluator
 
 
 class ExcelUploadView(APIView):
@@ -116,6 +117,21 @@ class TestViewSet(viewsets.ModelViewSet):
     answers=extend_schema(
         description="Get all submitted answers for this test",
         responses={200: OpenApiTypes.OBJECT},
+        tags=["Tests"],
+    ),
+    extend_time=extend_schema(
+        description="Extend the test duration for a student",
+        request={
+            "type": "object",
+            "properties": {
+                "additional_minutes": {
+                    "type": "integer",
+                    "description": "Number of minutes to add to the test duration",
+                }
+            },
+            "required": ["additional_minutes"],
+        },
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT},
         tags=["Tests"],
     ),
 )
@@ -341,46 +357,8 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def _evaluate_answer(self, question, answer_text):
-        print("inside answe", question, answer_text)
         """Helper method to evaluate answer based on question type"""
-        print(question.question_type)
-        try:
-            if question.question_type == Question.QuestionType.PLUS:
-                # Extract numbers from question text (assumes format like "[1, 2, 3]")
-                import ast
-
-                numbers = ast.literal_eval(question.text)
-                print(numbers)
-                expected_answer = sum(numbers)
-                print(expected_answer)
-
-                # Convert student's answer to integer for comparison
-                student_answer = int(answer_text)
-
-                is_correct = student_answer == expected_answer
-                marks_obtained = question.marks if is_correct else 0
-
-                return {
-                    "is_correct": is_correct,
-                    "marks_obtained": marks_obtained,
-                    "expected_answer": expected_answer,
-                }
-
-            # Add other question types evaluation here
-            return {
-                "is_correct": None,
-                "marks_obtained": 0,
-                "expected_answer": None,
-            }
-
-        except (ValueError, SyntaxError, TypeError):
-            # Handle invalid answer format or question text
-            return {
-                "is_correct": False,
-                "marks_obtained": 0,
-                "expected_answer": None,
-                "error": "Invalid answer format",
-            }
+        return AnswerEvaluator.evaluate_answer(question, answer_text)
 
     @action(detail=True, methods=["post"])
     def submit_answer(self, request, *args, **kwargs):
@@ -445,12 +423,12 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             {
                 "status": "Answer submitted and evaluated successfully",
                 "remaining_time": remaining_time,
-                # "evaluation": {
-                #     "is_correct": evaluation["is_correct"],
-                #     "marks_obtained": evaluation["marks_obtained"],
-                #     "expected_answer": evaluation["expected_answer"],
-                #     "error": evaluation.get("error"),
-                # },
+                "evaluation": {
+                    "is_correct": evaluation["is_correct"],
+                    "marks_obtained": evaluation["marks_obtained"],
+                    "expected_answer": evaluation["expected_answer"],
+                    "error": evaluation.get("error"),
+                },
             }
         )
 
@@ -524,6 +502,7 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             "answers": [
                 {
                     "question_uuid": str(answer.question.uuid),
+                    "question_type": answer.question.question_text,
                     "question_text": answer.question.text,
                     "question_order": answer.question.order,
                     "answer_text": answer.answer_text,
@@ -536,3 +515,64 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         }
 
         return Response(response_data)
+
+    @action(detail=True, methods=["post"])
+    def extend_time(self, request, *args, **kwargs):
+        """Extend the test duration for a student"""
+        student_test = self.get_object()
+
+        # Validate request data
+        try:
+            additional_minutes = int(request.data.get("additional_minutes", 0))
+            if additional_minutes <= 0:
+                return Response(
+                    {"error": "Additional minutes must be greater than 0"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except (TypeError, ValueError):
+            return Response(
+                {
+                    "error": "Invalid time format. Please provide minutes as a number"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if test can be extended
+        if student_test.status not in ["IN_PROGRESS", "INTERRUPTED"]:
+            return Response(
+                {
+                    "error": "Test must be in progress or interrupted to extend time"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get test session
+        session = student_test.session
+        if not session:
+            return Response(
+                {"error": "No active session found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            # Update session remaining time
+            additional_seconds = additional_minutes * 60
+            session.remaining_time_seconds = (
+                session.remaining_time_seconds or 0
+            ) + additional_seconds
+            session.save()
+
+            # If test was completed due to time expiry, reactivate it
+            if student_test.status == "INTERRUPTED":
+                student_test.status = "IN_PROGRESS"
+                student_test.save()
+
+        return Response(
+            {
+                "status": "Test time extended successfully",
+                "test_uuid": str(student_test.uuid),
+                "additional_time_added": additional_minutes,
+                "new_remaining_time": session.remaining_time_seconds,
+                "test_status": student_test.status,
+            }
+        )
