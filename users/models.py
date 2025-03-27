@@ -13,12 +13,16 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_("The Email must be set"))
 
         email = self.normalize_email(email)
-        user = self.model(phone_number=phone_number, email=email, **extra_fields)
+        user = self.model(
+            phone_number=phone_number, email=email, **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone_number, email, password=None, **extra_fields):
+    def create_superuser(
+        self, phone_number, email, password=None, **extra_fields
+    ):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
@@ -33,25 +37,34 @@ class User(AbstractUser):
         ("CENTRE", "Centre"),
         ("STUDENT", "Student"),
     )
-    uuid = models.UUIDField(default=uuid4, unique=True, editable=False, verbose_name=_("UUID"))
+    uuid = models.UUIDField(
+        default=uuid4, unique=True, editable=False, verbose_name=_("UUID")
+    )
 
     username = None
-    phone_number = models.CharField(_("phone number"), max_length=15, unique=True)
+    phone_number = models.CharField(
+        _("phone number"), max_length=15, unique=True
+    )
     email = models.EmailField(_("email address"), unique=True)
-    user_type = models.CharField(_("user type"), max_length=10, choices=USER_TYPE_CHOICES)
+    user_type = models.CharField(
+        _("user type"), max_length=10, choices=USER_TYPE_CHOICES
+    )
     is_superuser = models.BooleanField(
         _("superuser status"),
         default=False,
         db_index=True,
         help_text=_(
-            "Designates that this user has all permissions without " "explicitly assigning them."
+            "Designates that this user has all permissions without "
+            "explicitly assigning them."
         ),
     )
     is_staff = models.BooleanField(
         _("staff status"),
         default=False,
         db_index=True,
-        help_text=_("Designates whether the user can log into this admin site."),
+        help_text=_(
+            "Designates whether the user can log into this admin site."
+        ),
     )
     is_active = models.BooleanField(
         _("active"),
@@ -96,7 +109,9 @@ class UUIDManager(models.Manager):
 class UUIDModel(models.Model):
     """Base model class that has a `uuid` natural key field."""
 
-    uuid = models.UUIDField(default=uuid4, unique=True, editable=False, verbose_name=_("UUID"))
+    uuid = models.UUIDField(
+        default=uuid4, unique=True, editable=False, verbose_name=_("UUID")
+    )
 
     objects = UUIDManager()
 

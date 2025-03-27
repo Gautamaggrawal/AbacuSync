@@ -35,19 +35,31 @@ class Migration(migrations.Migration):
                         verbose_name="UUID",
                     ),
                 ),
-                ("title", models.CharField(max_length=200, verbose_name="title")),
+                (
+                    "title",
+                    models.CharField(max_length=200, verbose_name="title"),
+                ),
                 (
                     "duration_minutes",
-                    models.IntegerField(default=8, verbose_name="duration (minutes)"),
+                    models.IntegerField(
+                        default=8, verbose_name="duration (minutes)"
+                    ),
                 ),
-                ("is_active", models.BooleanField(default=True, verbose_name="active")),
+                (
+                    "is_active",
+                    models.BooleanField(default=True, verbose_name="active"),
+                ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
                 (
                     "level",
@@ -85,15 +97,22 @@ class Migration(migrations.Migration):
                         verbose_name="UUID",
                     ),
                 ),
-                ("title", models.CharField(max_length=100, verbose_name="title")),
+                (
+                    "title",
+                    models.CharField(max_length=100, verbose_name="title"),
+                ),
                 ("order", models.IntegerField(verbose_name="order")),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
                 (
                     "test",
@@ -148,11 +167,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "start_time",
-                    models.DateTimeField(blank=True, null=True, verbose_name="start time"),
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="start time"
+                    ),
                 ),
                 (
                     "end_time",
-                    models.DateTimeField(blank=True, null=True, verbose_name="end time"),
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="end time"
+                    ),
                 ),
                 (
                     "score",
@@ -166,11 +189,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "last_activity",
-                    models.DateTimeField(auto_now=True, verbose_name="last activity"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="last activity"
+                    ),
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "student",
@@ -233,11 +260,15 @@ class Migration(migrations.Migration):
                 ("marks", models.IntegerField(default=1, verbose_name="marks")),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
                 (
                     "section",
@@ -278,18 +309,29 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "session_id",
-                    models.UUIDField(default=uuid.uuid4, editable=False, verbose_name="session ID"),
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        verbose_name="session ID",
+                    ),
                 ),
-                ("is_active", models.BooleanField(default=True, verbose_name="active")),
+                (
+                    "is_active",
+                    models.BooleanField(default=True, verbose_name="active"),
+                ),
                 (
                     "remaining_time_seconds",
                     models.IntegerField(
-                        blank=True, null=True, verbose_name="remaining time (seconds)"
+                        blank=True,
+                        null=True,
+                        verbose_name="remaining time (seconds)",
                     ),
                 ),
                 (
                     "last_sync",
-                    models.DateTimeField(auto_now=True, verbose_name="last sync"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="last sync"
+                    ),
                 ),
                 (
                     "last_question",
@@ -340,11 +382,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "answer_text",
-                    models.TextField(blank=True, null=True, verbose_name="answer text"),
+                    models.TextField(
+                        blank=True, null=True, verbose_name="answer text"
+                    ),
                 ),
                 (
                     "is_correct",
-                    models.BooleanField(blank=True, null=True, verbose_name="is correct"),
+                    models.BooleanField(
+                        blank=True, null=True, verbose_name="is correct"
+                    ),
                 ),
                 (
                     "marks_obtained",
@@ -358,11 +404,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
                 (
                     "question",
@@ -391,49 +441,70 @@ class Migration(migrations.Migration):
                         fields=["student_test", "question"],
                         name="tests_app_s_student_9ae5b4_idx",
                     ),
-                    models.Index(fields=["is_correct"], name="tests_app_s_is_corr_91d6e4_idx"),
+                    models.Index(
+                        fields=["is_correct"],
+                        name="tests_app_s_is_corr_91d6e4_idx",
+                    ),
                 ],
                 "unique_together": {("student_test", "question")},
             },
         ),
         migrations.AddIndex(
             model_name="test",
-            index=models.Index(fields=["is_active"], name="tests_app_t_is_acti_239ff1_idx"),
+            index=models.Index(
+                fields=["is_active"], name="tests_app_t_is_acti_239ff1_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="test",
             index=models.Index(
-                fields=["level", "is_active"], name="tests_app_t_level_i_1a1766_idx"
+                fields=["level", "is_active"],
+                name="tests_app_t_level_i_1a1766_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="testsection",
-            index=models.Index(fields=["test", "order"], name="tests_app_t_test_id_b6d89b_idx"),
-        ),
-        migrations.AddIndex(
-            model_name="studenttest",
-            index=models.Index(fields=["student", "status"], name="tests_app_s_student_f948a3_idx"),
-        ),
-        migrations.AddIndex(
-            model_name="studenttest",
             index=models.Index(
-                fields=["status", "start_time"], name="tests_app_s_status_9add54_idx"
+                fields=["test", "order"], name="tests_app_t_test_id_b6d89b_idx"
             ),
         ),
         migrations.AddIndex(
             model_name="studenttest",
-            index=models.Index(fields=["test", "status"], name="tests_app_s_test_id_9a0e19_idx"),
+            index=models.Index(
+                fields=["student", "status"],
+                name="tests_app_s_student_f948a3_idx",
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="studenttest",
+            index=models.Index(
+                fields=["status", "start_time"],
+                name="tests_app_s_status_9add54_idx",
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="studenttest",
+            index=models.Index(
+                fields=["test", "status"], name="tests_app_s_test_id_9a0e19_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="question",
-            index=models.Index(fields=["section", "order"], name="tests_app_q_section_e25a9f_idx"),
+            index=models.Index(
+                fields=["section", "order"],
+                name="tests_app_q_section_e25a9f_idx",
+            ),
         ),
         migrations.AddIndex(
             model_name="testsession",
-            index=models.Index(fields=["session_id"], name="tests_app_t_session_4bfc68_idx"),
+            index=models.Index(
+                fields=["session_id"], name="tests_app_t_session_4bfc68_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="testsession",
-            index=models.Index(fields=["is_active"], name="tests_app_t_is_acti_3d007f_idx"),
+            index=models.Index(
+                fields=["is_active"], name="tests_app_t_is_acti_3d007f_idx"
+            ),
         ),
     ]

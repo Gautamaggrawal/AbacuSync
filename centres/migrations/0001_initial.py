@@ -80,11 +80,15 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=100, verbose_name="name")),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
                 (
                     "centre",
@@ -103,6 +107,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="centre",
-            index=models.Index(fields=["is_active"], name="centres_cen_is_acti_3ed12d_idx"),
+            index=models.Index(
+                fields=["is_active"], name="centres_cen_is_acti_3ed12d_idx"
+            ),
         ),
     ]

@@ -58,7 +58,9 @@ class Student(UUIDModel):
         blank=True,
     )
     level_start_date = models.DateField(_("level start date"))
-    level_completion_date = models.DateField(_("level completion date"), null=True, blank=True)
+    level_completion_date = models.DateField(
+        _("level completion date"), null=True, blank=True
+    )
     # is_active = models.BooleanField(_("active"), default=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
@@ -102,7 +104,9 @@ class StudentLevelHistory(UUIDModel):
         blank=True,
     )
     start_date = models.DateField(_("start date"), auto_now_add=True)
-    completion_date = models.DateField(_("completion date"), null=True, blank=True)
+    completion_date = models.DateField(
+        _("completion date"), null=True, blank=True
+    )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
 
     class Meta:

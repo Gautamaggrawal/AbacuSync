@@ -122,10 +122,14 @@ class StudentTest(UUIDModel):
         related_name="student_tests",
         help_text=_("Test being taken"),
     )
-    status = models.CharField(_("status"), max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    status = models.CharField(
+        _("status"), max_length=20, choices=STATUS_CHOICES, default="PENDING"
+    )
     start_time = models.DateTimeField(_("start time"), null=True, blank=True)
     end_time = models.DateTimeField(_("end time"), null=True, blank=True)
-    score = models.DecimalField(_("score"), max_digits=5, decimal_places=2, null=True, blank=True)
+    score = models.DecimalField(
+        _("score"), max_digits=5, decimal_places=2, null=True, blank=True
+    )
     current_section = models.ForeignKey(
         TestSection,
         on_delete=models.SET_NULL,
@@ -189,7 +193,11 @@ class StudentAnswer(UUIDModel):
     answer_text = models.TextField(_("answer text"), blank=True, null=True)
     is_correct = models.BooleanField(_("is correct"), null=True, blank=True)
     marks_obtained = models.DecimalField(
-        _("marks obtained"), max_digits=5, decimal_places=2, null=True, blank=True
+        _("marks obtained"),
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
     )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
@@ -216,7 +224,9 @@ class TestSession(UUIDModel):
         related_name="session",
         help_text=_("Test this session belongs to"),
     )
-    session_id = models.UUIDField(_("session ID"), default=uuid.uuid4, editable=False)
+    session_id = models.UUIDField(
+        _("session ID"), default=uuid.uuid4, editable=False
+    )
     last_question = models.ForeignKey(
         Question,
         on_delete=models.SET_NULL,

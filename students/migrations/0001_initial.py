@@ -40,15 +40,21 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=50, verbose_name="name")),
                 (
                     "description",
-                    models.TextField(blank=True, null=True, verbose_name="description"),
+                    models.TextField(
+                        blank=True, null=True, verbose_name="description"
+                    ),
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
             ],
             options={
@@ -82,24 +88,42 @@ class Migration(migrations.Migration):
                 (
                     "gender",
                     models.CharField(
-                        choices=[("M", "Male"), ("F", "Female"), ("O", "Other")],
+                        choices=[
+                            ("M", "Male"),
+                            ("F", "Female"),
+                            ("O", "Other"),
+                        ],
                         max_length=1,
                         verbose_name="gender",
                     ),
                 ),
-                ("level_start_date", models.DateField(verbose_name="level start date")),
+                (
+                    "level_start_date",
+                    models.DateField(verbose_name="level start date"),
+                ),
                 (
                     "level_completion_date",
-                    models.DateField(blank=True, null=True, verbose_name="level completion date"),
+                    models.DateField(
+                        blank=True,
+                        null=True,
+                        verbose_name="level completion date",
+                    ),
                 ),
-                ("is_active", models.BooleanField(default=True, verbose_name="active")),
+                (
+                    "is_active",
+                    models.BooleanField(default=True, verbose_name="active"),
+                ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="updated at"),
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="updated at"
+                    ),
                 ),
                 (
                     "centre",
@@ -167,11 +191,15 @@ class Migration(migrations.Migration):
                 ("start_date", models.DateField(verbose_name="start date")),
                 (
                     "completion_date",
-                    models.DateField(blank=True, null=True, verbose_name="completion date"),
+                    models.DateField(
+                        blank=True, null=True, verbose_name="completion date"
+                    ),
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="created at"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="created at"
+                    ),
                 ),
                 (
                     "changed_by",
@@ -219,18 +247,22 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="student",
-            index=models.Index(fields=["is_active"], name="students_st_is_acti_c00e81_idx"),
+            index=models.Index(
+                fields=["is_active"], name="students_st_is_acti_c00e81_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="student",
             index=models.Index(
-                fields=["centre", "is_active"], name="students_st_centre__ba03cc_idx"
+                fields=["centre", "is_active"],
+                name="students_st_centre__ba03cc_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="studentlevelhistory",
             index=models.Index(
-                fields=["student", "created_at"], name="students_st_student_c54b2d_idx"
+                fields=["student", "created_at"],
+                name="students_st_student_c54b2d_idx",
             ),
         ),
     ]

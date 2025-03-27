@@ -26,6 +26,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="studentlevelhistory",
             name="completion_date",
-            field=models.DateField(auto_now_add=True, null=True, verbose_name="completion date"),
+            field=models.DateField(
+                auto_now_add=True, null=True, verbose_name="completion date"
+            ),
         ),
     ]

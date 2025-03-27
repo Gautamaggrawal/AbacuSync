@@ -60,7 +60,13 @@ class CentreUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["uuid", "phone_number", "email", "is_active", "generated_password"]
+        fields = [
+            "uuid",
+            "phone_number",
+            "email",
+            "is_active",
+            "generated_password",
+        ]
         read_only_fields = ["uuid", "generated_password"]
 
 
@@ -142,7 +148,13 @@ class StudentUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["uuid", "phone_number", "email", "is_active", "generated_password"]
+        fields = [
+            "uuid",
+            "phone_number",
+            "email",
+            "is_active",
+            "generated_password",
+        ]
         read_only_fields = ["uuid", "generated_password"]
 
 
@@ -152,7 +164,9 @@ class StudentSerializer(serializers.ModelSerializer):
         slug_field="uuid",
         queryset=Level.objects.all(),
     )
-    level_name = serializers.CharField(source="current_level.name", read_only=True)
+    level_name = serializers.CharField(
+        source="current_level.name", read_only=True
+    )
     tests_taken = serializers.SerializerMethodField()
 
     class Meta:
@@ -198,7 +212,9 @@ class StudentSerializer(serializers.ModelSerializer):
         if "user" in validated_data:
             user_data = validated_data.pop("user")
             user = instance.user
-            user_serializer = StudentUserSerializer(user, data=user_data, partial=True)
+            user_serializer = StudentUserSerializer(
+                user, data=user_data, partial=True
+            )
             if user_serializer.is_valid():
                 user_serializer.save()
 
@@ -212,8 +228,12 @@ class StudentSerializer(serializers.ModelSerializer):
 
 class StudentLevelHistorySerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source="student.name", read_only=True)
-    new_level_name = serializers.CharField(source="new_level.name", read_only=True)
-    changed_by_name = serializers.CharField(source="changed_by.get_full_name", read_only=True)
+    new_level_name = serializers.CharField(
+        source="new_level.name", read_only=True
+    )
+    changed_by_name = serializers.CharField(
+        source="changed_by.get_full_name", read_only=True
+    )
     new_level = serializers.SlugRelatedField(
         slug_field="uuid",
         queryset=Level.objects.all(),

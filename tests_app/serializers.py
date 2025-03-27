@@ -5,7 +5,13 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from students.models import Level
-from tests_app.models import Question, StudentAnswer, StudentTest, Test, TestSection
+from tests_app.models import (
+    Question,
+    StudentAnswer,
+    StudentTest,
+    Test,
+    TestSection,
+)
 
 
 class ExcelUploadSerializer(serializers.Serializer):
@@ -35,7 +41,9 @@ class ExcelUploadSerializer(serializers.Serializer):
 
             # Validate required columns
             required_columns = ["No."]
-            missing_columns = [col for col in required_columns if col not in df.columns]
+            missing_columns = [
+                col for col in required_columns if col not in df.columns
+            ]
             if missing_columns:
                 raise serializers.ValidationError(
                     f"Missing required columns: {', '.join(missing_columns)}"
@@ -44,7 +52,9 @@ class ExcelUploadSerializer(serializers.Serializer):
             return data
 
         except Exception as e:
-            raise serializers.ValidationError(f"Error processing file: {str(e)}")
+            raise serializers.ValidationError(
+                f"Error processing file: {str(e)}"
+            )
 
     def create(self, validated_data):
         """Create test and questions from Excel file"""
@@ -79,7 +89,9 @@ class ExcelUploadSerializer(serializers.Serializer):
             c += 1
 
             # Remove NaN values and convert to integers
-            calculation_values = [int(val) for val in values[:-1] if pd.notna(val)]
+            calculation_values = [
+                int(val) for val in values[:-1] if pd.notna(val)
+            ]
             if calculation_values:
                 Question.objects.create(
                     section=section,
@@ -141,7 +153,13 @@ class TestSerializer(serializers.ModelSerializer):
 class StudentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAnswer
-        fields = ["uuid", "question", "answer_text", "is_correct", "marks_obtained"]
+        fields = [
+            "uuid",
+            "question",
+            "answer_text",
+            "is_correct",
+            "marks_obtained",
+        ]
         read_only_fields = ["is_correct", "marks_obtained"]
 
 

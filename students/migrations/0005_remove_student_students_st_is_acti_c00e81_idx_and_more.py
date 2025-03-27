@@ -26,6 +26,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="student",
-            index=models.Index(fields=["centre"], name="students_st_centre__8f1600_idx"),
+            index=models.Index(
+                fields=["centre"], name="students_st_centre__8f1600_idx"
+            ),
         ),
     ]

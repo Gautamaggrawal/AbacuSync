@@ -10,7 +10,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from students.models import Student
-from tests_app.models import Question, StudentAnswer, StudentTest, Test, TestSession
+from tests_app.models import (
+    Question,
+    StudentAnswer,
+    StudentTest,
+    Test,
+    TestSession,
+)
 
 from .serializers import (
     ExcelUploadSerializer,
@@ -43,8 +49,12 @@ class ExcelUploadView(APIView):
 
 
 @extend_schema_view(
-    list=extend_schema(description="List all available tests for the student", tags=["Tests"]),
-    retrieve=extend_schema(description="Get details of a specific test", tags=["Tests"]),
+    list=extend_schema(
+        description="List all available tests for the student", tags=["Tests"]
+    ),
+    retrieve=extend_schema(
+        description="Get details of a specific test", tags=["Tests"]
+    ),
 )
 class TestViewSet(viewsets.ModelViewSet):
     serializer_class = TestSerializer
@@ -68,7 +78,9 @@ class TestViewSet(viewsets.ModelViewSet):
         elif user.user_type == "STUDENT":
             # Students see only tests for their current level
             student = get_object_or_404(Student, user=user)
-            return Test.objects.filter(level=student.current_level, is_active=True)
+            return Test.objects.filter(
+                level=student.current_level, is_active=True
+            )
 
         # Default to empty queryset for any other user type
         return Test.objects.none()
@@ -91,7 +103,9 @@ class TestViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     create=extend_schema(description="Start a new test", tags=["Tests"]),
-    retrieve=extend_schema(description="Get current test status and questions", tags=["Tests"]),
+    retrieve=extend_schema(
+        description="Get current test status and questions", tags=["Tests"]
+    ),
     submit=extend_schema(
         description="Submit answers for the current test",
         request=TestSubmissionSerializer,
@@ -114,7 +128,9 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         student = get_object_or_404(Student, user=request.user)
 
         # Get all available tests for student's level
-        available_tests = Test.objects.filter(level=student.current_level, is_active=True)
+        available_tests = Test.objects.filter(
+            level=student.current_level, is_active=True
+        )
 
         # Get student's taken tests
         taken_tests = StudentTest.objects.filter(student=student)
@@ -123,7 +139,9 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         past_tests = taken_tests.filter(status="COMPLETED")
 
         # In-progress tests
-        in_progress_tests = taken_tests.filter(status__in=["IN_PROGRESS", "INTERRUPTED", "PENDING"])
+        in_progress_tests = taken_tests.filter(
+            status__in=["IN_PROGRESS", "INTERRUPTED", "PENDING"]
+        )
 
         # Upcoming tests (not taken yet)
         taken_test_ids = taken_tests.values_list("test_id", flat=True)
@@ -131,14 +149,19 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
         # Serialize each category
         past_serializer = self.get_serializer(past_tests, many=True)
-        in_progress_serializer = self.get_serializer(in_progress_tests, many=True)
+        in_progress_serializer = self.get_serializer(
+            in_progress_tests, many=True
+        )
         upcoming_serializer = TestSerializer(
             upcoming_tests, many=True
         )  # Use TestSerializer for upcoming tests
 
         return Response(
             {
-                "past_tests": {"count": past_tests.count(), "results": past_serializer.data},
+                "past_tests": {
+                    "count": past_tests.count(),
+                    "results": past_serializer.data,
+                },
                 "in_progress_tests": {
                     "count": in_progress_tests.count(),
                     "results": in_progress_serializer.data,
@@ -157,18 +180,20 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         student = get_object_or_404(Student, user=request.user)
 
         # Check if student already has an active test
-        if StudentTest.objects.filter(
-            student=student, status__in=["PENDING", "IN_PROGRESS"]
-        ).exists():
+        if StudentTest.objects.filter(student=student, test=test).exists():
             return Response(
-                {"error": "You already have an active test"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "You already have an active test"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Create student test and session
         with transaction.atomic():
-            student_test = StudentTest.objects.create(student=student, test=test, status="PENDING")
+            student_test = StudentTest.objects.create(
+                student=student, test=test, status="PENDING"
+            )
             TestSession.objects.create(
-                student_test=student_test, remaining_time_seconds=test.duration_minutes * 60
+                student_test=student_test,
+                remaining_time_seconds=test.duration_minutes * 60,
             )
 
         serializer = self.get_serializer(student_test)
@@ -178,7 +203,9 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         """Helper method to update remaining time"""
         session = student_test.session
         if session and student_test.start_time:
-            elapsed_time = (timezone.now() - student_test.start_time).total_seconds()
+            elapsed_time = (
+                timezone.now() - student_test.start_time
+            ).total_seconds()
             session.remaining_time_seconds = max(
                 0, (student_test.test.duration_minutes * 60) - int(elapsed_time)
             )
@@ -192,19 +219,26 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
         # If test is not in progress or interrupted, return 0
         if student_test.status not in ["IN_PROGRESS", "INTERRUPTED"]:
-            return Response({"remaining_duration": 0, "status": student_test.status})
+            return Response(
+                {"remaining_duration": 0, "status": student_test.status}
+            )
 
         # Get test session
         session = student_test.session
         if not session:
             return Response(
-                {"error": "No active session found", "status": student_test.status},
+                {
+                    "error": "No active session found",
+                    "status": student_test.status,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Calculate remaining time
         if student_test.status == "IN_PROGRESS":
-            elapsed_time = (timezone.now() - student_test.start_time).total_seconds()
+            elapsed_time = (
+                timezone.now() - student_test.start_time
+            ).total_seconds()
             remaining_seconds = max(
                 0, (student_test.test.duration_minutes * 60) - int(elapsed_time)
             )
@@ -227,7 +261,10 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         student_test = self.get_object()
 
         if student_test.status != "PENDING":
-            return Response({"error": "Test cannot be started"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Test cannot be started"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         student_test.status = "IN_PROGRESS"
         student_test.start_time = timezone.now()
@@ -236,7 +273,9 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         # Reset session time when starting
         session = student_test.session
         if session:
-            session.remaining_time_seconds = student_test.test.duration_minutes * 60
+            session.remaining_time_seconds = (
+                student_test.test.duration_minutes * 60
+            )
             session.last_sync = timezone.now()
             session.save()
 
@@ -250,14 +289,17 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
         if student_test.status != "IN_PROGRESS":
             return Response(
-                {"error": "Test is not in progress"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Test is not in progress"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         remaining_time = self._update_remaining_time(student_test)
         student_test.status = "INTERRUPTED"
         student_test.save()
 
-        return Response({"status": "Test paused", "remaining_time": remaining_time})
+        return Response(
+            {"status": "Test paused", "remaining_time": remaining_time}
+        )
 
     @action(detail=True, methods=["post"])
     def resume(self, request, *args, **kwargs):
@@ -266,7 +308,8 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
         if student_test.status != "INTERRUPTED":
             return Response(
-                {"error": "Test is not in interrupted state"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Test is not in interrupted state"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check if test time has expired
@@ -275,7 +318,10 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             student_test.status = "COMPLETED"
             student_test.end_time = timezone.now()
             student_test.save()
-            return Response({"error": "Test time has expired"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Test time has expired"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         student_test.status = "IN_PROGRESS"
         student_test.start_time = timezone.now()
@@ -296,7 +342,8 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         # Validate test status
         if student_test.status not in ["IN_PROGRESS"]:
             return Response(
-                {"error": "Test is not in progress"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Test is not in progress"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check remaining time
@@ -305,15 +352,22 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             student_test.status = "COMPLETED"
             student_test.end_time = timezone.now()
             student_test.save()
-            return Response({"error": "Test time has expired"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Test time has expired"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Validate answer data
         serializer = TestAnswerSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Save the answer
-        question = get_object_or_404(Question, uuid=serializer.validated_data["question"])
+        question = get_object_or_404(
+            Question, uuid=serializer.validated_data["question"]
+        )
         StudentAnswer.objects.create(
             student_test=student_test,
             question=question,
@@ -321,7 +375,10 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         )
 
         return Response(
-            {"status": "Answer submitted successfully", "remaining_time": remaining_time}
+            {
+                "status": "Answer submitted successfully",
+                "remaining_time": remaining_time,
+            }
         )
 
     @action(detail=True, methods=["post"])
@@ -352,7 +409,7 @@ class StudentTestViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         """Get test status with remaining time"""
         student_test = self.get_object()
-        if student_test.status in ["IN_PROGRESS", "INTERRUPTED"]:
+        if student_test.status in ["IN_PROGRESS"]:
             self._update_remaining_time(student_test)
 
         serializer = self.get_serializer(student_test)
@@ -364,7 +421,10 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         student_test = self.get_object()
 
         if student_test.status != "COMPLETED":
-            return Response({"error": "Test is not completed"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Test is not completed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = TestResultSerializer(student_test)
         return Response(serializer.data)

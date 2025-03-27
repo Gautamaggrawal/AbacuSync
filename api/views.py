@@ -5,7 +5,11 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
@@ -47,7 +51,9 @@ def login_user(request):
     Login endpoint for all user types.
     Returns authentication token and user details based on user type.
     """
-    serializer = LoginSerializer(data=request.data, context={"request": request})
+    serializer = LoginSerializer(
+        data=request.data, context={"request": request}
+    )
     serializer.is_valid(raise_exception=True)
 
     user = serializer.validated_data["user"]
@@ -69,7 +75,9 @@ def login_user(request):
             "email": user.email,
             "phone_number": user.phone_number,
             "total_centers": Centre.objects.count(),
-            "active_users": User.objects.filter(is_active=True, user_type="STUDENT").count(),
+            "active_users": User.objects.filter(
+                is_active=True, user_type="STUDENT"
+            ).count(),
         }
     elif user.user_type == "CENTRE":
         centre = user.centre_profile
@@ -114,9 +122,13 @@ def logout_user(request):
         ],
     ),
     create=extend_schema(description="Create a new centre/franchisee"),
-    retrieve=extend_schema(description="Get a specific centre/franchisee details"),
+    retrieve=extend_schema(
+        description="Get a specific centre/franchisee details"
+    ),
     update=extend_schema(description="Update a centre/franchisee"),
-    partial_update=extend_schema(description="Partially update a centre/franchisee"),
+    partial_update=extend_schema(
+        description="Partially update a centre/franchisee"
+    ),
     destroy=extend_schema(description="Delete a centre/franchisee"),
 )
 class CentreViewSet(viewsets.ModelViewSet):
@@ -134,7 +146,9 @@ class CentreViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Centre.objects.none()
-        return Centre.objects.all().select_related("user").prefetch_related("cis")
+        return (
+            Centre.objects.all().select_related("user").prefetch_related("cis")
+        )
 
     @extend_schema(
         description="Reset password for centre user",
@@ -152,7 +166,9 @@ class CentreViewSet(viewsets.ModelViewSet):
             centre.user.save()
             return Response({"password": new_password})
         except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @extend_schema(
         description="Toggle active status of centre",
@@ -215,7 +231,9 @@ class StudentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Student.objects.none()
-        queryset = Student.objects.all().select_related("user", "centre", "current_level", "ci")
+        queryset = Student.objects.all().select_related(
+            "user", "centre", "current_level", "ci"
+        )
         if self.request.user.user_type == "CENTRE":
             return queryset.filter(centre__user=self.request.user)
         return queryset
@@ -226,7 +244,10 @@ class StudentViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
-    @extend_schema(description="Reset password for student", responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        description="Reset password for student",
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=["post"])
     def reset_password(self, request, uuid=None):
         """Reset password for student"""
@@ -239,7 +260,9 @@ class StudentViewSet(viewsets.ModelViewSet):
             student.user.save()
             return Response({"password": new_password})
         except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @extend_schema(
         description="Toggle active status of student",
@@ -252,7 +275,9 @@ class StudentViewSet(viewsets.ModelViewSet):
         try:
             # Retrieve the student object within the transaction
             student = self.get_object()
-            was_inactive = not student.user.is_active  # Check if the user was inactive
+            was_inactive = (
+                not student.user.is_active
+            )  # Check if the user was inactive
 
             # Toggle the active status
             student.user.is_active = not student.user.is_active
@@ -262,7 +287,9 @@ class StudentViewSet(viewsets.ModelViewSet):
             if (
                 student.user.is_active
                 and was_inactive
-                and not StudentLevelHistory.objects.filter(student=student).exists()
+                and not StudentLevelHistory.objects.filter(
+                    student=student
+                ).exists()
             ):
                 # Create level history entry
                 StudentLevelHistory.objects.create(
@@ -277,13 +304,18 @@ class StudentViewSet(viewsets.ModelViewSet):
             student.user.save()
             student.save()
 
-            return Response({"status": "success", "is_active": student.user.is_active})
+            return Response(
+                {"status": "success", "is_active": student.user.is_active}
+            )
 
         except Exception as e:
             # Rollback will be automatic due to @transaction.atomic
             return Response({"status": "error", "message": str(e)}, status=400)
 
-    @extend_schema(description="Approve student (admin only)", responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        description="Approve student (admin only)",
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=["post"])
     def approve(self, request, uuid=None):
         """Approve student (admin only)"""
@@ -306,7 +338,9 @@ class StudentViewSet(viewsets.ModelViewSet):
     def level_history(self, request, uuid=None):
         """Get level history for a student"""
         student = self.get_object()
-        history = student.level_history.all().select_related("new_level", "changed_by")
+        history = student.level_history.all().select_related(
+            "new_level", "changed_by"
+        )
         serializer = StudentLevelHistorySerializer(history, many=True)
         return Response(serializer.data)
 
@@ -316,7 +350,9 @@ class StudentViewSet(viewsets.ModelViewSet):
     create=extend_schema(description="Create a new level history entry"),
     retrieve=extend_schema(description="Get a specific level history entry"),
     update=extend_schema(description="Update a level history entry"),
-    partial_update=extend_schema(description="Partially update a level history entry"),
+    partial_update=extend_schema(
+        description="Partially update a level history entry"
+    ),
     destroy=extend_schema(description="Delete a level history entry"),
 )
 class StudentLevelHistoryViewSet(viewsets.ModelViewSet):

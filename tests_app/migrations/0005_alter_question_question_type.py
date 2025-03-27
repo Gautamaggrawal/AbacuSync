@@ -5,7 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("tests_app", "0004_remove_question_tests_app_q_section_e25a9f_idx_and_more"),
+        (
+            "tests_app",
+            "0004_remove_question_tests_app_q_section_e25a9f_idx_and_more",
+        ),
     ]
 
     operations = [

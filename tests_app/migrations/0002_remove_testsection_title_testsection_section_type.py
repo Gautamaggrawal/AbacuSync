@@ -16,6 +16,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="testsection",
             name="section_type",
-            field=models.CharField(blank=True, max_length=100, verbose_name="Section Type"),
+            field=models.CharField(
+                blank=True, max_length=100, verbose_name="Section Type"
+            ),
         ),
     ]

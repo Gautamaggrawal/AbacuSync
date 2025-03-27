@@ -18,7 +18,13 @@ admin.site.register(Token, CustomTokenAdmin)
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("phone_number", "email", "user_type", "is_active", "is_staff")
+    list_display = (
+        "phone_number",
+        "email",
+        "user_type",
+        "is_active",
+        "is_staff",
+    )
     list_filter = ("user_type", "is_active", "is_staff")
     search_fields = ("phone_number", "email")
     ordering = ("phone_number",)

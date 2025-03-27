@@ -12,7 +12,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="test",
             name="due_date",
-            field=models.DateTimeField(blank=True, null=True, verbose_name="Due date"),
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Due date"
+            ),
         ),
         migrations.AlterField(
             model_name="testsection",

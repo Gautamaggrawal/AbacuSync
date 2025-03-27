@@ -76,8 +76,8 @@ lint:
 	xenon --max-absolute=C --max-modules=B --max-average=B --ignore=venv $(DIR_PATH)
 
 format:
-	isort --atomic --skip-glob="venv/*" --line-length=100 $(DIR_PATH)
-	black --exclude="venv/" --line-length=100 $(DIR_PATH)
+	isort --atomic --skip-glob="venv/*" --line-length=80 $(DIR_PATH)
+	black --exclude="venv/" --line-length=80 $(DIR_PATH)
 
 ready: format lint check test
 	@echo "Ready!"

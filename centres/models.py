@@ -6,7 +6,9 @@ from users.models import User, UUIDModel
 
 
 class Centre(UUIDModel):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="centre_profile")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="centre_profile"
+    )
     centre_name = models.CharField(max_length=100)
     franchisee_name = models.CharField(max_length=100)
     area = models.CharField(max_length=100)

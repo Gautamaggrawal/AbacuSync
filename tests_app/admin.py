@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import Question, StudentAnswer, StudentTest, Test, TestSection, TestSession
+from .models import (
+    Question,
+    StudentAnswer,
+    StudentTest,
+    Test,
+    TestSection,
+    TestSession,
+)
 
 
 class TestSectionInline(admin.TabularInline):
@@ -10,7 +17,15 @@ class TestSectionInline(admin.TabularInline):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    list_display = ("uuid", "id", "title", "level", "duration_minutes", "is_active", "created_at")
+    list_display = (
+        "uuid",
+        "id",
+        "title",
+        "level",
+        "duration_minutes",
+        "is_active",
+        "created_at",
+    )
     list_filter = ("is_active", "level")
     search_fields = ("title",)
     ordering = ("-created_at",)
@@ -29,7 +44,15 @@ class TestSectionAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("uuid", "id", "text", "section", "order", "marks", "created_at")
+    list_display = (
+        "uuid",
+        "id",
+        "text",
+        "section",
+        "order",
+        "marks",
+        "created_at",
+    )
     list_filter = ("section",)
     search_fields = ("text", "section__title")
     ordering = ("section", "order")
@@ -38,7 +61,15 @@ class QuestionAdmin(admin.ModelAdmin):
 
 @admin.register(StudentTest)
 class StudentTestAdmin(admin.ModelAdmin):
-    list_display = ("id", "student", "test", "status", "start_time", "end_time", "score")
+    list_display = (
+        "id",
+        "student",
+        "test",
+        "status",
+        "start_time",
+        "end_time",
+        "score",
+    )
     list_filter = ("status", "test")
     search_fields = ("student__name", "test__title")
     ordering = ("-start_time",)
@@ -48,7 +79,14 @@ class StudentTestAdmin(admin.ModelAdmin):
 
 @admin.register(StudentAnswer)
 class StudentAnswerAdmin(admin.ModelAdmin):
-    list_display = ("id", "student_test", "question", "is_correct", "marks_obtained", "created_at")
+    list_display = (
+        "id",
+        "student_test",
+        "question",
+        "is_correct",
+        "marks_obtained",
+        "created_at",
+    )
     list_filter = ("is_correct", "student_test__test")
     search_fields = ("student_test__student__name", "question__text")
     ordering = ("-created_at",)

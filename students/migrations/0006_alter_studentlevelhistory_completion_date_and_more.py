@@ -5,18 +5,25 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("students", "0005_remove_student_students_st_is_acti_c00e81_idx_and_more"),
+        (
+            "students",
+            "0005_remove_student_students_st_is_acti_c00e81_idx_and_more",
+        ),
     ]
 
     operations = [
         migrations.AlterField(
             model_name="studentlevelhistory",
             name="completion_date",
-            field=models.DateField(blank=True, null=True, verbose_name="completion date"),
+            field=models.DateField(
+                blank=True, null=True, verbose_name="completion date"
+            ),
         ),
         migrations.AlterField(
             model_name="studentlevelhistory",
             name="start_date",
-            field=models.DateField(auto_now_add=True, verbose_name="start date"),
+            field=models.DateField(
+                auto_now_add=True, verbose_name="start date"
+            ),
         ),
     ]

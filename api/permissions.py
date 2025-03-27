@@ -56,7 +56,11 @@ class IsTeacher(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user and hasattr(request.user, "profile") and request.user.profile.is_teacher
+        return (
+            request.user
+            and hasattr(request.user, "profile")
+            and request.user.profile.is_teacher
+        )
 
 
 class IsStudent(permissions.BasePermission):
@@ -65,7 +69,11 @@ class IsStudent(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user and hasattr(request.user, "profile") and request.user.profile.is_student
+        return (
+            request.user
+            and hasattr(request.user, "profile")
+            and request.user.profile.is_student
+        )
 
 
 class IsCentreAdminOrTeacher(permissions.BasePermission):
@@ -76,7 +84,10 @@ class IsCentreAdminOrTeacher(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not hasattr(request.user, "profile"):
             return False
-        return request.user.profile.is_centre_admin or request.user.profile.is_teacher
+        return (
+            request.user.profile.is_centre_admin
+            or request.user.profile.is_teacher
+        )
 
 
 class IsCentreAdminForCentre(permissions.BasePermission):
@@ -91,11 +102,15 @@ class IsCentreAdminForCentre(permissions.BasePermission):
         # Check if user is admin for this centre
         if hasattr(obj, "centre"):
             return (
-                request.user.profile.is_centre_admin and request.user.profile.centre == obj.centre
+                request.user.profile.is_centre_admin
+                and request.user.profile.centre == obj.centre
             )
 
         # If object is centre itself
         if hasattr(obj, "id"):
-            return request.user.profile.is_centre_admin and request.user.profile.centre.id == obj.id
+            return (
+                request.user.profile.is_centre_admin
+                and request.user.profile.centre.id == obj.id
+            )
 
         return False
