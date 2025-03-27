@@ -340,9 +340,51 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(student_test)
         return Response(serializer.data)
 
+    def _evaluate_answer(self, question, answer_text):
+        print("inside answe", question, answer_text)
+        """Helper method to evaluate answer based on question type"""
+        print(question.question_type)
+        try:
+            if question.question_type == Question.QuestionType.PLUS:
+                # Extract numbers from question text (assumes format like "[1, 2, 3]")
+                import ast
+
+                numbers = ast.literal_eval(question.text)
+                print(numbers)
+                expected_answer = sum(numbers)
+                print(expected_answer)
+
+                # Convert student's answer to integer for comparison
+                student_answer = int(answer_text)
+
+                is_correct = student_answer == expected_answer
+                marks_obtained = question.marks if is_correct else 0
+
+                return {
+                    "is_correct": is_correct,
+                    "marks_obtained": marks_obtained,
+                    "expected_answer": expected_answer,
+                }
+
+            # Add other question types evaluation here
+            return {
+                "is_correct": None,
+                "marks_obtained": 0,
+                "expected_answer": None,
+            }
+
+        except (ValueError, SyntaxError, TypeError):
+            # Handle invalid answer format or question text
+            return {
+                "is_correct": False,
+                "marks_obtained": 0,
+                "expected_answer": None,
+                "error": "Invalid answer format",
+            }
+
     @action(detail=True, methods=["post"])
     def submit_answer(self, request, *args, **kwargs):
-        """Submit a single answer during the test"""
+        """Submit and evaluate a single answer during the test"""
         student_test = self.get_object()
 
         # Validate test status
@@ -370,28 +412,45 @@ class StudentTestViewSet(viewsets.ModelViewSet):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Save the answer
+        # Get question and evaluate answer
         question = get_object_or_404(
             Question, uuid=serializer.validated_data["question"]
         )
+        answer_text = serializer.validated_data["answer_text"]
+        print(answer_text, "answer_text")
+        # Evaluate the answer
+        evaluation = self._evaluate_answer(question, answer_text)
 
+        # Update or create the answer with evaluation results
         stu_ans = StudentAnswer.objects.filter(
             student_test=student_test,
             question=question,
         )
+
+        answer_data = {
+            "answer_text": answer_text,
+            "is_correct": evaluation["is_correct"],
+            "marks_obtained": evaluation["marks_obtained"],
+        }
+
         if stu_ans.exists():
-            stu_ans.update(answer_text=serializer.validated_data["answer_text"])
+            stu_ans.update(**answer_data)
+            # student_answer = stu_ans.first()
         else:
             StudentAnswer.objects.create(
-                student_test=student_test,
-                question=question,
-                answer_text=serializer.validated_data["answer_text"],
+                student_test=student_test, question=question, **answer_data
             )
 
         return Response(
             {
-                "status": "Answer submitted successfully",
+                "status": "Answer submitted and evaluated successfully",
                 "remaining_time": remaining_time,
+                "evaluation": {
+                    "is_correct": evaluation["is_correct"],
+                    "marks_obtained": evaluation["marks_obtained"],
+                    "expected_answer": evaluation["expected_answer"],
+                    "error": evaluation.get("error"),
+                },
             }
         )
 

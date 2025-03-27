@@ -219,10 +219,12 @@ class TestSubmissionSerializer(serializers.Serializer):
 class SimplifiedAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.CharField(source="question.text")
     question_order = serializers.IntegerField(source="question.order")
+    question_uuid = serializers.UUIDField(source="question.uuid")
 
     class Meta:
         model = StudentAnswer
         fields = [
+            "question_uuid",
             "question_text",
             "question_order",
             "answer_text",
@@ -232,6 +234,7 @@ class SimplifiedAnswerSerializer(serializers.ModelSerializer):
 
 
 class EnhancedTestResultSerializer(serializers.ModelSerializer):
+    student_test_uuid = serializers.UUIDField(source="uuid")
     total_questions = serializers.SerializerMethodField()
     total_marks = serializers.SerializerMethodField()
     marks_obtained = serializers.SerializerMethodField()
@@ -244,7 +247,7 @@ class EnhancedTestResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentTest
         fields = [
-            "uuid",
+            "student_test_uuid",
             "status",
             "start_time",
             "end_time",
@@ -259,8 +262,11 @@ class EnhancedTestResultSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_questions(self, obj):
+        """Get total number of questions across all sections"""
         return (
-            obj.test.sections.aggregate(total=Sum(Count("questions")))["total"]
+            obj.test.sections.annotate(
+                question_count=Count("questions")
+            ).aggregate(total=Sum("question_count"))["total"]
             or 0
         )
 
