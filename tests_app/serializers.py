@@ -219,22 +219,34 @@ class TestSubmissionSerializer(serializers.Serializer):
 class SimplifiedAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.CharField(source="question.text")
     question_order = serializers.IntegerField(source="question.order")
-    question_uuid = serializers.UUIDField(source="question.uuid")
+    correct_answer_value = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentAnswer
         fields = [
-            "question_uuid",
             "question_text",
             "question_order",
             "answer_text",
             "is_correct",
             "marks_obtained",
+            "correct_answer_value",
         ]
+
+    def get_correct_answer_value(self, obj):
+        """Get correct answer based on question type"""
+        try:
+            if obj.question.question_type == Question.QuestionType.PLUS:
+                import ast
+
+                numbers = ast.literal_eval(obj.question.text)
+                return str(sum(numbers))
+            # Add other question types here as needed
+            return None
+        except (ValueError, SyntaxError, TypeError):
+            return None
 
 
 class EnhancedTestResultSerializer(serializers.ModelSerializer):
-    student_test_uuid = serializers.UUIDField(source="uuid")
     total_questions = serializers.SerializerMethodField()
     total_marks = serializers.SerializerMethodField()
     marks_obtained = serializers.SerializerMethodField()
@@ -242,16 +254,18 @@ class EnhancedTestResultSerializer(serializers.ModelSerializer):
     incorrect_answers = serializers.SerializerMethodField()
     accuracy_percentage = serializers.SerializerMethodField()
     completion_time = serializers.SerializerMethodField()
+    total_attempted = serializers.SerializerMethodField()
     answers = SimplifiedAnswerSerializer(source="answers.all", many=True)
 
     class Meta:
         model = StudentTest
         fields = [
-            "student_test_uuid",
+            "uuid",
             "status",
             "start_time",
             "end_time",
             "total_questions",
+            "total_attempted",
             "total_marks",
             "marks_obtained",
             "correct_answers",
@@ -270,6 +284,10 @@ class EnhancedTestResultSerializer(serializers.ModelSerializer):
             or 0
         )
 
+    def get_total_attempted(self, obj):
+        """Get total number of attempted questions"""
+        return obj.answers.count()
+
     def get_total_marks(self, obj):
         return (
             obj.test.sections.aggregate(total=Sum("questions__marks"))["total"]
@@ -286,11 +304,11 @@ class EnhancedTestResultSerializer(serializers.ModelSerializer):
         return obj.answers.filter(is_correct=False).count()
 
     def get_accuracy_percentage(self, obj):
-        total = obj.answers.count()
-        if total == 0:
+        attempted = self.get_total_attempted(obj)
+        if attempted == 0:
             return 0
-        correct = obj.answers.filter(is_correct=True).count()
-        return round((correct / total) * 100, 2)
+        correct = self.get_correct_answers(obj)
+        return round((correct / attempted) * 100, 2)
 
     def get_completion_time(self, obj):
         if obj.start_time and obj.end_time:
