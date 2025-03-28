@@ -18,7 +18,7 @@ class AnswerEvaluator:
             raise ValueError("Invalid question format")
 
     @classmethod
-    def calculate_answer(cls, question: Question) -> Optional[Any]:
+    def calculate_answer(cls, question: Question):
         """Calculate the correct answer for a question"""
         try:
             numbers = cls.parse_numbers(question.text)

@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from typing import Any, Dict, Optional
 from students.models import Student
 from tests_app.models import (
     Question,
@@ -234,203 +234,151 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             session.save()
         return session.remaining_time_seconds if session else 0
 
+    def _get_session(self, student_test) -> Optional[TestSession]:
+        """Get and validate test session"""
+        session = student_test.session
+        if not session:
+            raise ValueError("No active session found")
+        return session
+
+    def _validate_test_status(self, student_test, allowed_statuses, error_message=None):
+        """Validate test status"""
+        if student_test.status not in allowed_statuses:
+            raise ValueError(
+                error_message or f"Test must be in one of these states: {', '.join(allowed_statuses)}"
+            )
+
+    def _handle_test_expiry(self, student_test):
+        """Handle test expiry"""
+        student_test.status = "COMPLETED"
+        student_test.end_time = timezone.now()
+        student_test.save()
+        raise ValueError("Test time has expired")
+
+    def _handle_api_error(self, e: Exception):
+        """Standardized error response"""
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     @action(detail=True, methods=["get"])
     def remaining_duration(self, request, *args, **kwargs):
         """Get remaining duration for a test"""
-        student_test = self.get_object()
-
-        # If test is not in progress or interrupted, return 0
-        if student_test.status not in ["IN_PROGRESS", "INTERRUPTED"]:
-            return Response(
-                {"remaining_duration": 0, "status": student_test.status}
+        try:
+            student_test = self.get_object()
+            self._validate_test_status(
+                student_test, 
+                ["IN_PROGRESS", "INTERRUPTED"],
+                "Test is not active"
             )
+            
+            session = self._get_session(student_test)
+            
+            # Calculate remaining time
+            if student_test.status == "IN_PROGRESS":
+                elapsed_time = (timezone.now() - student_test.start_time).total_seconds()
+                remaining_seconds = max(
+                    0, 
+                    (student_test.test.duration_minutes * 60) - int(elapsed_time)
+                )
+            else:  # INTERRUPTED
+                remaining_seconds = max(0, session.remaining_time_seconds)
 
-        # Get test session
-        session = student_test.session
-        if not session:
-            return Response(
-                {
-                    "error": "No active session found",
-                    "status": student_test.status,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Calculate remaining time
-        if student_test.status == "IN_PROGRESS":
-            elapsed_time = (
-                timezone.now() - student_test.start_time
-            ).total_seconds()
-            remaining_seconds = max(
-                0, (student_test.test.duration_minutes * 60) - int(elapsed_time)
-            )
-        else:  # INTERRUPTED
-            remaining_seconds = max(0, session.remaining_time_seconds)
-
-        return Response(
-            {
+            return Response({
                 "remaining_duration": remaining_seconds,
                 "status": student_test.status,
                 "total_duration": student_test.test.duration_minutes * 60,
                 "start_time": student_test.start_time,
                 "last_activity": session.last_sync,
-            }
-        )
+            })
 
-    @action(detail=True, methods=["post"])
-    def start(self, request, *args, **kwargs):
-        """Start the test"""
-        student_test = self.get_object()
-
-        if student_test.status != "PENDING":
-            return Response(
-                {"error": "Test cannot be started"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        student_test.status = "IN_PROGRESS"
-        student_test.start_time = timezone.now()
-        student_test.save()
-
-        # Reset session time when starting
-        session = student_test.session
-        if session:
-            session.remaining_time_seconds = (
-                student_test.test.duration_minutes * 60
-            )
-            session.last_sync = timezone.now()
-            session.save()
-
-        serializer = self.get_serializer(student_test)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=["post"])
-    def pause(self, request, *args, **kwargs):
-        """Pause the test and save remaining time"""
-        student_test = self.get_object()
-
-        if student_test.status != "IN_PROGRESS":
-            return Response(
-                {"error": "Test is not in progress"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        remaining_time = self._update_remaining_time(student_test)
-        student_test.status = "INTERRUPTED"
-        student_test.save()
-
-        return Response(
-            {"status": "Test paused", "remaining_time": remaining_time}
-        )
-
-    @action(detail=True, methods=["post"])
-    def resume(self, request, *args, **kwargs):
-        """Resume an interrupted test"""
-        student_test = self.get_object()
-
-        if student_test.status != "INTERRUPTED":
-            return Response(
-                {"error": "Test is not in interrupted state"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Check if test time has expired
-        session = student_test.session
-        if session and session.remaining_time_seconds <= 0:
-            student_test.status = "COMPLETED"
-            student_test.end_time = timezone.now()
-            student_test.save()
-            return Response(
-                {"error": "Test time has expired"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        student_test.status = "IN_PROGRESS"
-        student_test.start_time = timezone.now()
-        student_test.save()
-
-        if session:
-            session.last_sync = timezone.now()
-            session.save()
-
-        serializer = self.get_serializer(student_test)
-        return Response(serializer.data)
-
-    def _evaluate_answer(self, question, answer_text):
-        """Helper method to evaluate answer based on question type"""
-        return AnswerEvaluator.evaluate_answer(question, answer_text)
+        except ValueError as e:
+            return self._handle_api_error(e)
 
     @action(detail=True, methods=["post"])
     def submit_answer(self, request, *args, **kwargs):
         """Submit and evaluate a single answer during the test"""
-        student_test = self.get_object()
+        try:
+            student_test = self.get_object()
+            self._validate_test_status(student_test, ["IN_PROGRESS"])
+            
+            # Check remaining time
+            remaining_time = self._update_remaining_time(student_test)
+            if remaining_time <= 0:
+                self._handle_test_expiry(student_test)
 
-        # Validate test status
-        if student_test.status not in ["IN_PROGRESS"]:
-            return Response(
-                {"error": "Test is not in progress"},
-                status=status.HTTP_400_BAD_REQUEST,
+            # Validate and process answer
+            serializer = TestAnswerSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            question = get_object_or_404(
+                Question, uuid=serializer.validated_data["question"]
+            )
+            evaluation = self._evaluate_answer(question, serializer.validated_data["answer_text"])
+
+            # Save answer
+            answer_data = {
+                "answer_text": serializer.validated_data["answer_text"],
+                "is_correct": evaluation["is_correct"],
+                "marks_obtained": evaluation["marks_obtained"],
+            }
+            
+            StudentAnswer.objects.update_or_create(
+                student_test=student_test,
+                question=question,
+                defaults=answer_data
             )
 
-        # Check remaining time
-        remaining_time = self._update_remaining_time(student_test)
-        if remaining_time <= 0:
-            student_test.status = "COMPLETED"
-            student_test.end_time = timezone.now()
-            student_test.save()
-            return Response(
-                {"error": "Test time has expired"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Validate answer data
-        serializer = TestAnswerSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Get question and evaluate answer
-        question = get_object_or_404(
-            Question, uuid=serializer.validated_data["question"]
-        )
-        answer_text = serializer.validated_data["answer_text"]
-        print(answer_text, "answer_text")
-        # Evaluate the answer
-        evaluation = self._evaluate_answer(question, answer_text)
-
-        # Update or create the answer with evaluation results
-        stu_ans = StudentAnswer.objects.filter(
-            student_test=student_test,
-            question=question,
-        )
-
-        answer_data = {
-            "answer_text": answer_text,
-            "is_correct": evaluation["is_correct"],
-            "marks_obtained": evaluation["marks_obtained"],
-        }
-
-        if stu_ans.exists():
-            stu_ans.update(**answer_data)
-            # student_answer = stu_ans.first()
-        else:
-            StudentAnswer.objects.create(
-                student_test=student_test, question=question, **answer_data
-            )
-
-        return Response(
-            {
+            return Response({
                 "status": "Answer submitted and evaluated successfully",
                 "remaining_time": remaining_time,
-                "evaluation": {
-                    "is_correct": evaluation["is_correct"],
-                    "marks_obtained": evaluation["marks_obtained"],
-                    "expected_answer": evaluation["expected_answer"],
-                    "error": evaluation.get("error"),
-                },
-            }
-        )
+                "evaluation": evaluation
+            })
+
+        except ValueError as e:
+            return self._handle_api_error(e)
+
+    @action(detail=True, methods=["post"])
+    def extend_time(self, request, *args, **kwargs):
+        """Extend the test duration for a student"""
+        try:
+            student_test = self.get_object()
+            
+            # Validate input
+            additional_minutes = int(request.data.get("additional_minutes", 0))
+            if additional_minutes <= 0:
+                raise ValueError("Additional minutes must be greater than 0")
+                
+            self._validate_test_status(student_test, ["IN_PROGRESS", "INTERRUPTED"])
+            session = self._get_session(student_test)
+
+            with transaction.atomic():
+                # Update session time
+                additional_seconds = additional_minutes * 60
+                session.remaining_time_seconds = (session.remaining_time_seconds or 0) + additional_seconds
+                session.save()
+
+                # Reactivate if interrupted
+                if student_test.status == "INTERRUPTED":
+                    student_test.status = "IN_PROGRESS"
+                    student_test.save()
+
+            return Response({
+                "status": "Test time extended successfully",
+                "test_uuid": str(student_test.uuid),
+                "additional_time_added": additional_minutes,
+                "new_remaining_time": session.remaining_time_seconds,
+                "test_status": student_test.status,
+            })
+
+        except (ValueError, TypeError) as e:
+            return self._handle_api_error(e)
+
+    def _evaluate_answer(self, question, answer_text):
+        """Helper method to evaluate answer based on question type"""
+        return AnswerEvaluator.evaluate_answer(question, answer_text)
 
     @action(detail=True, methods=["post"])
     def end_test(self, request, *args, **kwargs):
@@ -515,64 +463,3 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         }
 
         return Response(response_data)
-
-    @action(detail=True, methods=["post"])
-    def extend_time(self, request, *args, **kwargs):
-        """Extend the test duration for a student"""
-        student_test = self.get_object()
-
-        # Validate request data
-        try:
-            additional_minutes = int(request.data.get("additional_minutes", 0))
-            if additional_minutes <= 0:
-                return Response(
-                    {"error": "Additional minutes must be greater than 0"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        except (TypeError, ValueError):
-            return Response(
-                {
-                    "error": "Invalid time format. Please provide minutes as a number"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Check if test can be extended
-        if student_test.status not in ["IN_PROGRESS", "INTERRUPTED"]:
-            return Response(
-                {
-                    "error": "Test must be in progress or interrupted to extend time"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Get test session
-        session = student_test.session
-        if not session:
-            return Response(
-                {"error": "No active session found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        with transaction.atomic():
-            # Update session remaining time
-            additional_seconds = additional_minutes * 60
-            session.remaining_time_seconds = (
-                session.remaining_time_seconds or 0
-            ) + additional_seconds
-            session.save()
-
-            # If test was completed due to time expiry, reactivate it
-            if student_test.status == "INTERRUPTED":
-                student_test.status = "IN_PROGRESS"
-                student_test.save()
-
-        return Response(
-            {
-                "status": "Test time extended successfully",
-                "test_uuid": str(student_test.uuid),
-                "additional_time_added": additional_minutes,
-                "new_remaining_time": session.remaining_time_seconds,
-                "test_status": student_test.status,
-            }
-        )

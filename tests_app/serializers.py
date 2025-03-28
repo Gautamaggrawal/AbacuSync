@@ -249,6 +249,7 @@ class TestSubmissionSerializer(serializers.Serializer):
 
 class SimplifiedAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.CharField(source="question.text")
+    question_type = serializers.CharField(source="question.question_type")
     question_order = serializers.IntegerField(source="question.order")
     correct_answer_value = serializers.SerializerMethodField()
 
@@ -257,6 +258,7 @@ class SimplifiedAnswerSerializer(serializers.ModelSerializer):
         fields = [
             "question_text",
             "question_order",
+            "question_type",
             "answer_text",
             "is_correct",
             "marks_obtained",
