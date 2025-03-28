@@ -502,7 +502,7 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             "answers": [
                 {
                     "question_uuid": str(answer.question.uuid),
-                    "question_type": answer.question.question_text,
+                    "question_type": answer.question.question_type,
                     "question_text": answer.question.text,
                     "question_order": answer.question.order,
                     "answer_text": answer.answer_text,
