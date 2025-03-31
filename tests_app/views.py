@@ -373,15 +373,15 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             )
 
         # Check remaining time
-        remaining_time = self._update_remaining_time(student_test)
-        if remaining_time <= 0:
-            student_test.status = "COMPLETED"
-            student_test.end_time = timezone.now()
-            student_test.save()
-            return Response(
-                {"error": "Test time has expired"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # remaining_time = self._update_remaining_time(student_test)
+        # if remaining_time <= 0:
+        #     student_test.status = "COMPLETED"
+        #     student_test.end_time = timezone.now()
+        #     student_test.save()
+        #     return Response(
+        #         {"error": "Test time has expired"},
+        #         status=status.HTTP_400_BAD_REQUEST,
+        #     )
 
         # Validate answer data
         serializer = TestAnswerSerializer(data=request.data)
@@ -422,7 +422,6 @@ class StudentTestViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "status": "Answer submitted and evaluated successfully",
-                "remaining_time": remaining_time,
                 "evaluation": {
                     "is_correct": evaluation["is_correct"],
                     "marks_obtained": evaluation["marks_obtained"],
