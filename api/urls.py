@@ -15,6 +15,9 @@ router.register(
     basename="student-level-history",
 )
 router.register(r"levels", views.LevelViewSet, basename="level")
+router.register(
+    r"notifications", views.NotificationViewSet, basename="notification"
+)
 
 # Authentication URLs
 auth_urls = [

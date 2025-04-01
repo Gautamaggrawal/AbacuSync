@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from centres.models import CI, Centre
 from students.models import Level, Student, StudentLevelHistory
-from users.models import User
+from users.models import Notification, User
 
 
 class LoginSerializer(serializers.Serializer):
@@ -265,3 +265,83 @@ class LevelSerializer(serializers.ModelSerializer):
         model = Level
         fields = ["uuid", "name", "description"]
         read_only_fields = ["uuid"]
+
+
+class NotificationCreateSerializer(serializers.ModelSerializer):
+    centre_ids = serializers.ListField(
+        child=serializers.UUIDField(), write_only=True
+    )
+
+    class Meta:
+        model = Notification
+        fields = ["uuid", "title", "message", "centre_ids", "created_at"]
+        read_only_fields = ["uuid", "created_at"]
+
+    def validate_centre_ids(self, value):
+        # Verify all centres exist
+        centres = Centre.objects.filter(uuid__in=value)
+        if len(centres) != len(value):
+            raise serializers.ValidationError(
+                "One or more invalid centre IDs provided"
+            )
+        return value
+
+    def create(self, validated_data):
+        centre_ids = validated_data.pop("centre_ids")
+        user = self.context["request"].user
+
+        # Create notification
+        notification = Notification.objects.create(
+            **validated_data, created_by=user
+        )
+
+        # Add centres
+        centres = Centre.objects.filter(uuid__in=centre_ids)
+        notification.centres.add(*centres)
+
+        return notification
+
+
+class NotificationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ["uuid", "title", "message", "created_at", "is_read"]
+
+
+class CentreNotificationSerializer(serializers.ModelSerializer):
+    centre_id = serializers.UUIDField(source="uuid")
+
+    class Meta:
+        model = Centre
+        fields = [
+            "centre_id",
+            "centre_name",
+        ]
+
+
+class NotificationDetailSerializer(serializers.ModelSerializer):
+    centres = CentreNotificationSerializer(many=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            "uuid",
+            "title",
+            "message",
+            "created_at",
+            "is_read",
+            "centres",
+            "created_by",
+        ]
+
+    def get_centres(self, obj):
+        return [
+            {"uuid": centre.uuid, "name": centre.name}
+            for centre in obj.centres.all()
+        ]
+
+    def get_created_by(self, obj):
+        return {
+            "uuid": obj.created_by.uuid,
+            "name": obj.created_by.get_full_name(),
+        }

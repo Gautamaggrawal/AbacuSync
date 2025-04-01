@@ -120,3 +120,25 @@ class UUIDModel(models.Model):
 
     def natural_key(self):
         return (self.uuid,)
+
+
+class Notification(UUIDModel):
+    from centres.models import Centre
+
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    centres = models.ManyToManyField(Centre, related_name="notifications")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_notifications"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return self.title

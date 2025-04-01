@@ -2,18 +2,29 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from rest_framework.authtoken.models import Token
 
-from .models import User
+from .models import Notification, User
 
 
 class CustomTokenAdmin(admin.ModelAdmin):
-    list_display = ("key", "user", "user__user_type", "created")
+    list_display = (
+        "key",
+        "_get_user_uuid",
+        "user",
+        "user__user_type",
+        "created",
+    )
     fields = ("user",)
     list_filter = ("user__user_type",)
     ordering = ("-created",)
     search_fields = ("user__username", "user__email", "key")
 
+    def _get_user_uuid(self, obj):
+        return obj.user.uuid
+
 
 admin.site.register(Token, CustomTokenAdmin)
+
+admin.site.register(Notification)
 
 
 @admin.register(User)

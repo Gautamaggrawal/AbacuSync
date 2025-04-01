@@ -18,13 +18,16 @@ from rest_framework.response import Response
 
 from centres.models import Centre
 from students.models import Level, Student, StudentLevelHistory
-from users.models import User
+from users.models import Notification, User
 
 from .permissions import IsAdmin
 from .serializers import (
     CentreSerializer,
     LevelSerializer,
     LoginSerializer,
+    NotificationCreateSerializer,
+    NotificationDetailSerializer,
+    NotificationListSerializer,
     StudentLevelHistorySerializer,
     StudentSerializer,
 )
@@ -418,3 +421,104 @@ class LevelViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LevelSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = "uuid"
+
+
+class IsAdminOrReadOnly(IsAuthenticated):
+    def has_permission(self, request, view):
+        is_authenticated = super().has_permission(request, view)
+        if not is_authenticated:
+            return False
+
+        # Allow read operations for authenticated users
+        if request.method in ["GET", "HEAD", "OPTIONS"]:
+            return True
+
+        # Allow write operations only for admin users
+        return request.user.user_type == "ADMIN"
+
+
+@extend_schema_view(
+    list=extend_schema(
+        description="List notifications", tags=["Notifications"]
+    ),
+    create=extend_schema(
+        description="Create new notification (Admin only)",
+        tags=["Notifications"],
+    ),
+    retrieve=extend_schema(
+        description="Get notification details", tags=["Notifications"]
+    ),
+    update=extend_schema(
+        description="Update notification (Admin only)", tags=["Notifications"]
+    ),
+    destroy=extend_schema(
+        description="Delete notification (Admin only)", tags=["Notifications"]
+    ),
+)
+class NotificationViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminOrReadOnly]
+    lookup_field = "uuid"
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return NotificationCreateSerializer
+        elif self.action == "retrieve":
+            return NotificationDetailSerializer
+        return NotificationListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Notification.objects.all().prefetch_related("centres")
+        print(queryset, "queryset")
+        print(user.user_type, "user.user_type")
+        # # Filter by centre_uuid if provided
+        # centre_uuid = self.request.query_params.get('centre_uuid', None)
+        # if centre_uuid:
+        #     queryset = queryset.filter(centres__uuid__in=[centre_uuid])
+
+        # # Filter by student_uuid if provided
+        # student_uuid = self.request.query_params.get('student_uuid', None)
+        # if student_uuid:
+        #     try:
+        #         student = Student.objects.get(uuid=student_uuid)
+        #         # Get notifications for the centre that the student belongs to
+        #         queryset = queryset.filter(centres=student.centre)
+        #     except Student.DoesNotExist:
+        #         # Return empty queryset if student doesn't exist
+        #         return Notification.objects.none()
+
+        # Apply user permissions filtering
+        if user.user_type == "CENTRE":
+            # For non-admin users, show only notifications for their centre
+            queryset = queryset.filter(centres__in=[user.centre_profile])
+
+        elif user.user_type == "STUDENT":
+            # For non-admin users, show only notifications for their centre
+            queryset = queryset.filter(
+                centres__in=[user.student_profile.centre]
+            )
+
+            # For admin users, show all notifications
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        notification = serializer.save()
+
+        # Use DetailSerializer for response
+        response_serializer = NotificationDetailSerializer(notification)
+        return Response(
+            response_serializer.data, status=status.HTTP_201_CREATED
+        )
+
+    def mark_as_read(self, request, *args, **kwargs):
+        """Mark notification as read"""
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data)
