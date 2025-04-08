@@ -221,6 +221,8 @@ class ExcelUploadSerializer(serializers.Serializer):
         questions = []
 
         for col in numeric_cols:
+            if col == df.columns[0]:
+                continue
             column_data = df.iloc[:data_rows, col].values
             question_numbers = []
             for val in column_data:
