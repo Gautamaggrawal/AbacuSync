@@ -1,0 +1,571 @@
+{
+	"info": {
+		"_postman_id": "1234567-89ab-cdef-0123-456789abcdef",
+		"name": "AbacuSync",
+		"description": "API collection for AbacuSync application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login - Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.token) {",
+									"    pm.environment.set(\"admin_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"admin_phone\",\n    \"password\": \"admin_password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as admin user"
+					}
+				},
+				{
+					"name": "Login - Centre",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.token) {",
+									"    pm.environment.set(\"centre_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"centre_phone\",\n    \"password\": \"centre_password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as centre user"
+					}
+				},
+				{
+					"name": "Login - Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.token) {",
+									"    pm.environment.set(\"student_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone_number\": \"student_phone\",\n    \"password\": \"student_password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as student user"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout/",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
+						},
+						"description": "Logout current user"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Centre Management",
+			"item": [
+				{
+					"name": "List Centres",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/centres/",
+							"host": ["{{base_url}}"],
+							"path": ["centres"],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search in centre_name, franchisee_name, area",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of all centres"
+					}
+				},
+				{
+					"name": "Create Centre",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": {\n        \"phone_number\": \"1234567890\",\n        \"email\": \"centre@example.com\"\n    },\n    \"centre_name\": \"Example Centre\",\n    \"franchisee_name\": \"John Doe\",\n    \"area\": \"Downtown\",\n    \"cis\": [\n        {\n            \"name\": \"CI 1\"\n        },\n        {\n            \"name\": \"CI 2\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/centres/",
+							"host": ["{{base_url}}"],
+							"path": ["centres"]
+						},
+						"description": "Create a new centre"
+					}
+				},
+				{
+					"name": "Get Centre Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/centres/{{centre_uuid}}/",
+							"host": ["{{base_url}}"],
+							"path": ["centres", "{{centre_uuid}}"]
+						},
+						"description": "Get details of a specific centre"
+					}
+				},
+				{
+					"name": "Update Centre",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": {\n        \"phone_number\": \"1234567890\",\n        \"email\": \"centre@example.com\"\n    },\n    \"centre_name\": \"Updated Centre Name\",\n    \"franchisee_name\": \"John Doe\",\n    \"area\": \"Downtown\",\n    \"cis\": [\n        {\n            \"name\": \"Updated CI 1\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/centres/{{centre_uuid}}/",
+							"host": ["{{base_url}}"],
+							"path": ["centres", "{{centre_uuid}}"]
+						},
+						"description": "Update a centre's details"
+					}
+				},
+				{
+					"name": "Reset Centre Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/centres/{{centre_uuid}}/reset_password/",
+							"host": ["{{base_url}}"],
+							"path": ["centres", "{{centre_uuid}}", "reset_password"]
+						},
+						"description": "Reset password for a centre"
+					}
+				},
+				{
+					"name": "Toggle Centre Active Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/centres/{{centre_uuid}}/toggle_active/",
+							"host": ["{{base_url}}"],
+							"path": ["centres", "{{centre_uuid}}", "toggle_active"]
+						},
+						"description": "Enable/disable a centre"
+					}
+				},
+				{
+					"name": "Get Centre Students",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/centres/{{centre_uuid}}/students/",
+							"host": ["{{base_url}}"],
+							"path": ["centres", "{{centre_uuid}}", "students"]
+						},
+						"description": "Get list of students for a specific centre"
+					}
+				}
+			]
+		},
+		{
+			"name": "Centre - Student Management",
+			"item": [
+				{
+					"name": "List Students",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/",
+							"host": ["{{base_url}}"],
+							"path": ["students"],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search in name, phone_number, email",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of students (filtered by centre for centre users)"
+					}
+				},
+				{
+					"name": "Create Student",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": {\n        \"phone_number\": \"9876543210\",\n        \"email\": \"student@example.com\"\n    },\n    \"name\": \"Student Name\",\n    \"dob\": \"2010-01-01\",\n    \"gender\": \"M\",\n    \"current_level\": \"{{level_uuid}}\",\n    \"ci\": \"{{ci_uuid}}\",\n    \"level_start_date\": \"2024-01-01\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/students/",
+							"host": ["{{base_url}}"],
+							"path": ["students"]
+						},
+						"description": "Create a new student"
+					}
+				},
+				{
+					"name": "Get Student Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_uuid}}/",
+							"host": ["{{base_url}}"],
+							"path": ["students", "{{student_uuid}}"]
+						},
+						"description": "Get details of a specific student"
+					}
+				},
+				{
+					"name": "Update Student",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": {\n        \"phone_number\": \"9876543210\",\n        \"email\": \"student@example.com\"\n    },\n    \"name\": \"Updated Student Name\",\n    \"dob\": \"2010-01-01\",\n    \"gender\": \"M\",\n    \"current_level\": \"{{level_uuid}}\",\n    \"ci\": \"{{ci_uuid}}\",\n    \"level_start_date\": \"2024-01-01\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/students/{{student_uuid}}/",
+							"host": ["{{base_url}}"],
+							"path": ["students", "{{student_uuid}}"]
+						},
+						"description": "Update a student's details"
+					}
+				},
+				{
+					"name": "Reset Student Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_uuid}}/reset_password/",
+							"host": ["{{base_url}}"],
+							"path": ["students", "{{student_uuid}}", "reset_password"]
+						},
+						"description": "Reset password for a student"
+					}
+				},
+				{
+					"name": "Toggle Student Active Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_uuid}}/toggle_active/",
+							"host": ["{{base_url}}"],
+							"path": ["students", "{{student_uuid}}", "toggle_active"]
+						},
+						"description": "Enable/disable a student"
+					}
+				},
+				{
+					"name": "Get Student Level History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{centre_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_uuid}}/level_history/",
+							"host": ["{{base_url}}"],
+							"path": ["students", "{{student_uuid}}", "level_history"]
+						},
+						"description": "Get level history for a student"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin - Student Management",
+			"item": [
+				{
+					"name": "Approve Student",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/students/{{student_uuid}}/approve/",
+							"host": ["{{base_url}}"],
+							"path": ["students", "{{student_uuid}}", "approve"]
+						},
+						"description": "Approve a student (admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Level Management",
+			"item": [
+				{
+					"name": "List Levels",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/levels/",
+							"host": ["{{base_url}}"],
+							"path": ["levels"]
+						},
+						"description": "Get list of all levels"
+					}
+				},
+				{
+					"name": "Get Level Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/levels/{{level_uuid}}/",
+							"host": ["{{base_url}}"],
+							"path": ["levels", "{{level_uuid}}"]
+						},
+						"description": "Get details of a specific level"
+					}
+				}
+			]
+		},
+		{
+			"name": "Student Level History",
+			"item": [
+				{
+					"name": "List Level History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/student-level-history/",
+							"host": ["{{base_url}}"],
+							"path": ["student-level-history"]
+						},
+						"description": "Get list of all level history entries"
+					}
+				},
+				{
+					"name": "Create Level History",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Token {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"student\": \"{{student_uuid}}\",\n    \"new_level\": \"{{level_uuid}}\",\n    \"start_date\": \"2024-03-01\",\n    \"completion_date\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/student-level-history/",
+							"host": ["{{base_url}}"],
+							"path": ["student-level-history"]
+						},
+						"description": "Create a new level history entry"
+					}
+				}
+			]
+		}
+	]
+} 
