@@ -24,12 +24,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-1r-r@^cawjg%qm*f)pldmoi^y*y7k0#@+#9@g@%h9*-2wj+ue1"
+SECRET_KEY = (
+    "django-insecure-1r-r@^cawjg%qm*f)pldmoi^y*y7k0#@+#9@g@%h9*-2wj+ue1"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["abacusync.onrender.com", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "abacusync.onrender.com",
+    "localhost",
+    "127.0.0.1",
+    "*.ngrok-free.app",
+    "0542-122-161-48-124.ngrok-free.app",
+]
 AUTH_USER_MODEL = "users.User"
 
 # Application definition
@@ -78,6 +86,18 @@ CORS_ALLOW_METHODS = [
     "PATCH",
     "POST",
     "PUT",
+]
+# Option 2: More secure - specify exact origins
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "https://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://127.0.0.1:8000",
+    # ngrok temporary domain
+    "https://*.ngrok-free.app",
+    # Your actual production domain(s)
+    "https://*.onrender.com",
+    "https://www.yourdomain.com",
 ]
 # CORS_ALLOW_HEADERS = [
 #     'accept',
@@ -129,21 +149,25 @@ WSGI_APPLICATION = "AbacuSync.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 # Initialize environ
 env = environ.Env()
 environ.Env.read_env()  # Reads the .env file
 
-
-# Use the environment variables to configure the database
-DATABASES = {
-    'default': env.db('DATABASE_URL', default='postgres://user:password@localhost:5432/dbname')
-}
+# Database configuration
+# Check if DATABASE_URL is provided in environment variables
+if os.environ.get('DATABASE_URL'):
+    # Use PostgreSQL configuration from environment variable
+    DATABASES = {
+        "default": env.db("DATABASE_URL")
+    }
+else:
+    # Use SQLite as fallback
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -191,16 +215,26 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework.authentication.TokenAuthentication",),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # JWT settings
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_TOKEN_LIFETIME", 5))),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_LIFETIME", 1))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=int(os.getenv("JWT_ACCESS_TOKEN_LIFETIME", 5))
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        days=int(os.getenv("JWT_REFRESH_TOKEN_LIFETIME", 1))
+    ),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": True,
