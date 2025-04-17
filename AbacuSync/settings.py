@@ -32,7 +32,7 @@ SECRET_KEY = (
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "abacusync.onrender.com",
+    "*.onrender.com",
     "localhost",
     "127.0.0.1",
     "*.ngrok-free.app",
