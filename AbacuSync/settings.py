@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "*.ngrok-free.app",
     "0542-122-161-48-124.ngrok-free.app",
+    "ucmas-backend.onrender.com",
 ]
 AUTH_USER_MODEL = "users.User"
 
