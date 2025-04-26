@@ -103,7 +103,7 @@ class CentreSerializer(serializers.ModelSerializer):
 
         # Create user with centre type
         user_data["user_type"] = "CENTRE"
-        generated_password = get_random_string(length=12)
+        generated_password = 'abcdef'
         user_data["password"] = generated_password
         user = User.objects.create_user(**user_data)
 
@@ -195,7 +195,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
         # Create user with student type
         user_data["user_type"] = "STUDENT"
-        generated_password = get_random_string(length=12)
+        generated_password = '123456'
         user_data["password"] = generated_password
         user_data["is_active"] = False  # Student needs admin approval
         user = User.objects.create_user(**user_data)
