@@ -9,7 +9,7 @@ ENV DJANGO_SETTINGS_MODULE=AbacuSync.settings
 WORKDIR /app
 
 # Install system dependencies
-RUN RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
