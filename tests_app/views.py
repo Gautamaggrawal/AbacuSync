@@ -8,27 +8,19 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Avg, Count
+from django.db.models.functions import TruncWeek
+from datetime import datetime
 
 from students.models import Student
-from tests_app.models import (
-    Question,
-    StudentAnswer,
-    StudentTest,
-    Test,
-    TestSession,
-)
-from tests_app.serializers import (
-    EnhancedTestResultSerializer,
-    ExcelUploadSerializer,
-    StudentTestSerializer,
-    TestAnswerSerializer,
-    TestResultSerializer,
-    TestSerializer,
-    TestSubmissionSerializer,
-)
+from tests_app.models import (Question, StudentAnswer, StudentTest, Test,
+                              TestSession, StudentTestAnalytics,)
+from tests_app.serializers import (EnhancedTestResultSerializer,
+                                   ExcelUploadSerializer, StudentTestSerializer,
+                                   TestAnswerSerializer, TestResultSerializer,
+                                   TestSerializer, TestSubmissionSerializer, HighestScorerSerializer)
 
 from .utils import AnswerEvaluator
-
 
 class ExcelUploadView(APIView):
     """View for handling Excel file uploads"""
@@ -372,17 +364,6 @@ class StudentTestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check remaining time
-        # remaining_time = self._update_remaining_time(student_test)
-        # if remaining_time <= 0:
-        #     student_test.status = "COMPLETED"
-        #     student_test.end_time = timezone.now()
-        #     student_test.save()
-        #     return Response(
-        #         {"error": "Test time has expired"},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-
         # Validate answer data
         serializer = TestAnswerSerializer(data=request.data)
         if not serializer.is_valid():
@@ -413,7 +394,6 @@ class StudentTestViewSet(viewsets.ModelViewSet):
 
         if stu_ans.exists():
             stu_ans.update(**answer_data)
-            # student_answer = stu_ans.first()
         else:
             StudentAnswer.objects.create(
                 student_test=student_test, question=question, **answer_data
@@ -449,8 +429,29 @@ class StudentTestViewSet(viewsets.ModelViewSet):
             student_test.end_time = timezone.now()
             student_test.save()
 
-            # Calculate final score if needed
-            # ... score calculation logic ...
+            # --- BEGIN: Analytics population ---
+            # Use the serializer to get all computed fields
+            serializer = EnhancedTestResultSerializer(student_test)
+            data = serializer.data
+
+            # Store answers as JSON
+            answers_json = data.get("answers", [])
+
+            # Create or update the analytics record
+            StudentTestAnalytics.objects.update_or_create(
+                student_test=student_test,
+                defaults={
+                    "total_questions": data["total_questions"],
+                    "total_attempted": data["total_attempted"],
+                    "total_marks": data["total_marks"],
+                    "marks_obtained": data["marks_obtained"],
+                    "correct_answers": data["correct_answers"],
+                    "incorrect_answers": data["incorrect_answers"],
+                    "accuracy_percentage": data["accuracy_percentage"],
+                    "answers_json": answers_json,
+                }
+            )
+            # --- END: Analytics population ---
 
         # Return test results
         result_serializer = TestResultSerializer(student_test)
@@ -575,3 +576,195 @@ class StudentTestViewSet(viewsets.ModelViewSet):
                 "test_status": student_test.status,
             }
         )
+
+
+@extend_schema(
+    description="Get the highest scorer for a particular level from the last 7 days",
+    tags=["Tests"]
+)
+class HighestScorerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        level_uuid = request.query_params.get('level')
+        if not level_uuid:
+            return Response({
+                'error': 'Level UUID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate the date 7 days ago
+        seven_days_ago = timezone.now() - timezone.timedelta(days=7)
+
+        # Get all completed tests for the specified level from last 7 days
+        highest_scorer_analytics = StudentTestAnalytics.objects.filter(
+            student_test__test__level__uuid=level_uuid,
+            student_test__student__current_level__uuid=level_uuid,
+            student_test__status='COMPLETED',
+            student_test__end_time__gte=seven_days_ago
+        ).select_related(
+            'student_test__student'
+        ).order_by('-marks_obtained').first()
+
+        if not highest_scorer_analytics:
+            return Response({
+                'message': 'No completed tests found for this level in the last 7 days'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        response_data = {
+            'student': highest_scorer_analytics.student_test.student,
+            'marks_obtained': highest_scorer_analytics.marks_obtained
+        }
+
+        serializer = HighestScorerSerializer(response_data)
+        return Response(serializer.data)
+
+
+class WeeklyCombinedAnalyticsView(APIView):
+    def get(self, request):
+        # Get query parameters
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        student_id = request.query_params.get('student_id')
+
+        if not student_id:
+            return Response(
+                {'error': 'student_id is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Base queryset with student filter
+        queryset = StudentTestAnalytics.objects.filter(
+            student_test__status='COMPLETED',
+            student_test__student=Student.objects.get(uuid=student_id)
+        )
+
+        # Apply date filters
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                queryset = queryset.filter(student_test__end_time__gte=start_date)
+            except ValueError:
+                return Response(
+                    {'error': 'Invalid start_date format. Use YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                queryset = queryset.filter(student_test__end_time__lte=end_date)
+            except ValueError:
+                return Response(
+                    {'error': 'Invalid end_date format. Use YYYY-MM-DD'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Get weekly test attempt counts for the student
+        weekly_attempt_counts = (
+            queryset
+            .annotate(
+                week=TruncWeek('student_test__end_time')
+            )
+            .values('week')
+            .annotate(
+                total_attempts=Count('id'),
+                unique_tests=Count('student_test__test', distinct=True)
+            )
+            .order_by('week')
+        )
+
+        # Get weekly statistics per test for the student
+        weekly_stats = (
+            queryset
+            .annotate(
+                week=TruncWeek('student_test__end_time')
+            )
+            .values(
+                'week',
+                'student_test__test__title',
+                'student_test__test_id',
+                'total_questions',
+                'total_attempted',
+                'correct_answers',
+                'accuracy_percentage',
+                'total_marks',
+                'marks_obtained',
+            )
+            .order_by('week', 'student_test__test__title')
+        )
+
+        # Create a lookup for weekly attempt counts
+        weekly_attempts_lookup = {
+            stat['week'].isoformat(): {
+                'total_attempts': stat['total_attempts'],
+                'unique_tests': stat['unique_tests']
+            }
+            for stat in weekly_attempt_counts
+        }
+
+        # Format the response
+        response_data = []
+        current_week = None
+        current_week_data = None
+
+        for stat in weekly_stats:
+            week = stat['week'].isoformat()
+            
+            # If we're starting a new week, create a new week entry
+            if week != current_week:
+                if current_week_data is not None:
+                    response_data.append(current_week_data)
+                current_week = week
+                current_week_data = {
+                    'week': week,
+                    'weekly_summary': {
+                        'total_test_attempts': weekly_attempts_lookup[week]['total_attempts'],
+                        'unique_tests': weekly_attempts_lookup[week]['unique_tests'],
+                    },
+                    'tests': []
+                }
+
+            # Calculate attempt rate
+            attempt_rate = (
+                round(float(stat['total_attempted'] / stat['total_questions'] * 100), 2)
+                if stat['total_questions']
+                else 0
+            )
+
+            # Calculate marks percentage
+            marks_percentage = (
+                round(float(stat['marks_obtained'] / stat['total_marks'] * 100), 2)
+                if stat['total_marks']
+                else 0
+            )
+
+            # Add test data
+            test_data = {
+                'test_id': str(stat['student_test__test_id']),
+                'test_title': stat['student_test__test__title'],
+                'statistics': {
+                    'questions': {
+                        'total_questions': stat['total_questions'],
+                        'total_attempted': stat['total_attempted'],
+                        'correct_answers': stat['correct_answers'],
+                        'attempt_rate': attempt_rate,
+                        'accuracy_percentage': round(float(stat['accuracy_percentage']), 2)
+                    },
+                    'marks': {
+                        'total_marks': stat['total_marks'],
+                        'marks_obtained': stat['marks_obtained'],
+                        'marks_percentage': marks_percentage
+                    }
+                }
+            }
+            
+            current_week_data['tests'].append(test_data)
+
+        # Add the last week's data
+        if current_week_data is not None:
+            response_data.append(current_week_data)
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+

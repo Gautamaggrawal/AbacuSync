@@ -148,6 +148,7 @@ class StudentTest(UUIDModel):
             models.Index(fields=["student", "status"]),
             models.Index(fields=["status", "start_time"]),
             models.Index(fields=["test", "status"]),
+            models.Index(fields=["end_time"]),
         ]
 
     def __str__(self):
@@ -251,3 +252,25 @@ class TestSession(UUIDModel):
 
     def __str__(self):
         return f"Session for {self.student_test.student.name} - {self.student_test.test.title}"
+
+
+class StudentTestAnalytics(UUIDModel):
+    student_test = models.OneToOneField(
+        StudentTest, on_delete=models.CASCADE
+    )
+    total_questions = models.IntegerField()
+    total_attempted = models.IntegerField()
+    total_marks = models.FloatField()
+    marks_obtained = models.FloatField()
+    correct_answers = models.IntegerField()
+    incorrect_answers = models.IntegerField()
+    accuracy_percentage = models.FloatField()
+    answers_json = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+
+    class Meta:
+        verbose_name = _("StudentTest Analytics")
+        indexes = [
+            models.Index(fields=["marks_obtained"]),
+        ]

@@ -23,6 +23,7 @@ router.register(
 auth_urls = [
     path("login/", views.login_user, name="login"),
     path("logout/", views.logout_user, name="logout"),
+    path('reset-password/', views.PasswordResetRequestView.as_view(), name='change-password'),
 ]
 
 # The API URLs are now determined automatically by the router

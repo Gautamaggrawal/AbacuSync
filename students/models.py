@@ -27,6 +27,7 @@ class Student(UUIDModel):
         ("F", _("Female")),
         ("O", _("Other")),
     )
+    is_approved = models.BooleanField(default=False)
 
     user = models.OneToOneField(
         User,
@@ -64,6 +65,11 @@ class Student(UUIDModel):
     # is_active = models.BooleanField(_("active"), default=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+
+    def delete(self, *args, **kwargs):
+        user = self.user
+        super().delete(*args, **kwargs)
+        user.delete()
 
     class Meta:
         verbose_name = _("student")

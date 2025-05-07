@@ -13,8 +13,13 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
-
 import environ
+
+# Initialize environ
+env = environ.Env()
+environ.Env.read_env()  # Reads the .env file if exists
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,21 +29,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-1r-r@^cawjg%qm*f)pldmoi^y*y7k0#@+#9@g@%h9*-2wj+ue1"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-1r-r@^cawjg%qm*f)pldmoi^y*y7k0#@+#9@g@%h9*-2wj+ue1"
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = [
-    "*.onrender.com",
-    "localhost",
-    "127.0.0.1",
-    "*.ngrok-free.app",
-    "0542-122-161-48-124.ngrok-free.app",
-    "ucmas-backend.onrender.com",
-]
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+
+# Use environment variable for allowed hosts
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*.run.app,localhost,127.0.0.1, abacussync-dgjbuxd27q-el.a.run.app").split(",")
+
+
 AUTH_USER_MODEL = "users.User"
 
 # Application definition
@@ -90,15 +92,16 @@ CORS_ALLOW_METHODS = [
 ]
 # Option 2: More secure - specify exact origins
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8000",
-    "https://localhost:8000",
-    "http://127.0.0.1:8000",
-    "https://127.0.0.1:8000",
+    "http://localhost:8080",
+    "https://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://127.0.0.1:8080",
     # ngrok temporary domain
     "https://*.ngrok-free.app",
     # Your actual production domain(s)
     "https://*.onrender.com",
     "https://www.yourdomain.com",
+    'https://abacussync-dgjbuxd27q-el.a.run.app',
 ]
 # CORS_ALLOW_HEADERS = [
 #     'accept',
@@ -253,3 +256,16 @@ SPECTACULAR_SETTINGS = {
 }
 
 # AUTH_USER_MODEL = "users.User"
+# Security settings for production
+if not DEBUG:
+    # HTTPS settings
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True").lower() == "true"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Set PORT for Cloud Run
+PORT = int(os.environ.get("PORT", 8080))

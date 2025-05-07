@@ -34,6 +34,19 @@ class LoginSerializer(serializers.Serializer):
             if not user:
                 msg = "Unable to log in with provided credentials."
                 raise serializers.ValidationError(msg, code="authorization")
+            
+            # Check if user is a student and not approved
+            if user.user_type == "STUDENT":
+                try:
+                    student = user.student_profile
+                    if not student.is_approved:
+                        msg = "Student account is not approved yet."
+                        raise serializers.ValidationError(msg, code="authorization")
+                    if not user.is_active:
+                        msg = "User account is disabled."
+                        raise serializers.ValidationError(msg, code="authorization")
+                except Student.DoesNotExist:
+                    pass
 
             if not user.is_active:
                 msg = "User account is disabled."
@@ -103,7 +116,7 @@ class CentreSerializer(serializers.ModelSerializer):
 
         # Create user with centre type
         user_data["user_type"] = "CENTRE"
-        generated_password = 'abcdef'
+        generated_password = "abcdef"
         user_data["password"] = generated_password
         user = User.objects.create_user(**user_data)
 
@@ -195,7 +208,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
         # Create user with student type
         user_data["user_type"] = "STUDENT"
-        generated_password = '123456'
+        generated_password = "123456"
         user_data["password"] = generated_password
         user_data["is_active"] = False  # Student needs admin approval
         user = User.objects.create_user(**user_data)
@@ -345,3 +358,38 @@ class NotificationDetailSerializer(serializers.ModelSerializer):
             "uuid": obj.created_by.uuid,
             "name": obj.created_by.get_full_name(),
         }
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = User.objects.filter(phone_number=data["phone_number"]).first()
+        if not user:
+            raise serializers.ValidationError(
+                "User with this phone number does not exist."
+            )
+        return data
+
+
+class StudentApprovalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ["id", "is_approved"]
+        read_only_fields = ["id",]
+
+    def update(self, instance, validated_data):
+        instance.is_approved = validated_data.get(
+            "is_approved", instance.is_approved
+        )
+        instance.save()
+        return instance
+
+class UnapprovedStudentSerializer(serializers.ModelSerializer):
+    centre = CentreSerializer()
+    user = StudentUserSerializer()
+    current_level_name = serializers.CharField(source ='current_level.name')
+    class Meta:
+        model = Student
+        fields = ['uuid', 'user', 'name', 'current_level_name', 'centre', 'is_approved', 'created_at']  # Add other fields as needed

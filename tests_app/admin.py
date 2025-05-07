@@ -1,15 +1,9 @@
 from django.contrib import admin
 
-from .models import (
-    Question,
-    StudentAnswer,
-    StudentTest,
-    Test,
-    TestSection,
-    TestSession,
-)
+from .models import (Question, StudentAnswer, StudentTest, Test, TestSection,
+                     TestSession, StudentTestAnalytics)
 
-
+admin.site.register(StudentTestAnalytics)
 class TestSectionInline(admin.TabularInline):
     model = TestSection
     extra = 1

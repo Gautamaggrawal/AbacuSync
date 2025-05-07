@@ -9,16 +9,11 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from students.models import Level
-from tests_app.models import (
-    Question,
-    StudentAnswer,
-    StudentTest,
-    Test,
-    TestSection,
-)
+from tests_app.models import (Question, StudentAnswer, StudentTest, Test,
+                              TestSection)
 
 from .utils import AnswerEvaluator
-
+from api.serializers import UnapprovedStudentSerializer
 
 class ExcelUploadSerializer(serializers.Serializer):
     """Optimized Serializer for handling Excel file uploads"""
@@ -313,11 +308,14 @@ class ExcelUploadSerializer(serializers.Serializer):
     def create_questions_from_section(self, section, section_data):
         """Create questions from parsed section data"""
         for i, question_data in enumerate(section_data["questions"], 1):
+            # Set marks based on question type
+            marks = 10 if question_data["type"] == Question.QuestionType.PLUS else 5
+            
             Question.objects.create(
                 section=section,
                 text=str(question_data["question_text"]),
                 order=i,
-                marks=1,
+                marks=marks,  # Use the dynamic marks value
                 question_type=question_data["type"],
             )
 
@@ -415,6 +413,7 @@ class TestSerializer(serializers.ModelSerializer):
     sections = TestSectionSerializer(many=True, read_only=True)
     duration_remaining = serializers.SerializerMethodField()
     level_uuid = serializers.UUIDField(source="level.uuid")
+    level = serializers.CharField(source="level.name")
 
     class Meta:
         model = Test
@@ -632,3 +631,8 @@ class TestAnswerSerializer(serializers.Serializer):
 
     question = serializers.UUIDField()
     answer_text = serializers.CharField()
+
+
+class HighestScorerSerializer(serializers.Serializer):
+    student = UnapprovedStudentSerializer()
+    marks_obtained = serializers.FloatField()

@@ -16,6 +16,11 @@ class Centre(UUIDModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def delete(self, *args, **kwargs):
+        user = self.user
+        super().delete(*args, **kwargs)
+        user.delete()
+
     class Meta:
         verbose_name = _("centre")
         verbose_name_plural = _("centres")

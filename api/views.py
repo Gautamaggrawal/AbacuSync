@@ -5,32 +5,27 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    extend_schema,
-    extend_schema_view,
-)
+from drf_spectacular.utils import (OpenApiParameter, extend_schema,
+                                   extend_schema_view)
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from centres.models import Centre
 from students.models import Level, Student, StudentLevelHistory
 from users.models import Notification, User
 
 from .permissions import IsAdmin
-from .serializers import (
-    CentreSerializer,
-    LevelSerializer,
-    LoginSerializer,
-    NotificationCreateSerializer,
-    NotificationDetailSerializer,
-    NotificationListSerializer,
-    StudentLevelHistorySerializer,
-    StudentSerializer,
-)
+from .serializers import (CentreSerializer, LevelSerializer, LoginSerializer,
+                          NotificationCreateSerializer,
+                          NotificationDetailSerializer,
+                          NotificationListSerializer, PasswordResetSerializer,
+                          StudentApprovalSerializer,
+                          StudentLevelHistorySerializer, StudentSerializer,
+                          UnapprovedStudentSerializer)
 
 
 @extend_schema(
@@ -271,6 +266,12 @@ class StudentViewSet(viewsets.ModelViewSet):
         description="Toggle active status of student",
         responses={200: OpenApiTypes.OBJECT},
     )
+    @action(detail=False, methods=["get"])
+    def unapproved(self, request):
+        unapproved_students = Student.objects.filter(is_approved=False)
+        serializer = UnapprovedStudentSerializer(unapproved_students, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=["post"])
     @transaction.atomic
     def toggle_active(self, request, uuid=None):
@@ -327,11 +328,20 @@ class StudentViewSet(viewsets.ModelViewSet):
                 {"error": "Only admin can approve students"},
                 status=status.HTTP_403_FORBIDDEN,
             )
-
         student = self.get_object()
-        student.user.is_active = True
-        student.user.save()
-        return Response({"status": "success"})
+        
+        serializer = StudentApprovalSerializer(
+            student,
+            data={"is_approved": True},
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Student approved successfully."},
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         description="Get level history for a student",
@@ -469,8 +479,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Notification.objects.all().prefetch_related("centres")
-        print(queryset, "queryset")
-        print(user.user_type, "user.user_type")
         # # Filter by centre_uuid if provided
         # centre_uuid = self.request.query_params.get('centre_uuid', None)
         # if centre_uuid:
@@ -522,3 +530,16 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(notification)
         return Response(serializer.data)
+
+
+class PasswordResetRequestView(APIView):
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            user = User.objects.get(
+                phone_number=serializer.validated_data["phone_number"]
+            )
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+            return Response({"detail": "Password changed successfully."})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
